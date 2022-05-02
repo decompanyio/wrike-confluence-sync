@@ -1,0 +1,55 @@
+{{- range . -}}
+<h3><strong>{{ .AuthorName }}</strong><br/></h3>
+<table data-layout="wide">
+    <colgroup>
+        <col style="width: 220.0px;"/>
+        <col style="width: 60.0px;"/>
+        <col style="width: 85.0px;"/>
+        <col style="width: 85.0px;"/>
+        <col style="width: 85.0px;"/>
+        <col style="width: 220.0px;"/>
+    </colgroup>
+    <tbody>
+    <tr>
+        <th>
+            <p><strong>제목</strong></p></th>
+        <th>
+            <p><strong>중요</strong></p></th>
+        <th>
+            <p><strong>작성일</strong></p></th>
+        <th>
+            <p><strong>시작일</strong></p></th>
+        <th>
+            <p><strong>기한</strong></p></th>
+        <th>
+            <p><strong>산출물</strong></p></th>
+    </tr>
+    {{- range .Tasks.Data -}}
+    <tr>
+        <td>
+            <p><a href="{{ .Permalink }}">
+                {{- if eq .Status "Completed" -}}
+                <del>{{ .Title }}</del>
+                {{- else -}}
+                {{ .Title }}
+                {{- end -}}
+            </a></p>
+        </td>
+        <td>
+            <p>보통</p></td>
+        <td>
+            <p>{{- if .CreatedDate -}}{{ .CreatedDate.Format "2006-01-02" }}{{- end -}}</p></td>
+        <td>
+            <p>{{- if .Dates.Start -}}{{ .Dates.Start.Format "2006-01-02" }}{{- end -}}</p></td>
+        <td>
+            <p>{{- if .Dates.Due -}}{{ .Dates.Due.Format "2006-01-02" }}{{- end -}}</p></td>
+        <td>
+            <p><a href="https://co-jesh.atlassian.net/wiki/pages/resumedraft.action?draftId=196823"
+                  data-card-appearance="inline">https://co-jesh.atlassian.net/wiki/pages/resumedraft.action?draftId=196823</a>
+            </p></td>
+    </tr>
+    {{- end -}}
+    </tbody>
+</table>
+<p/>
+{{- end -}}
