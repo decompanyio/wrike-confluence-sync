@@ -5,19 +5,17 @@ import (
 	"log"
 )
 
-const (
-	spaceId = "~166200948"
-)
-
 type confluence struct {
-	client *goconfluence.API
+	client  *goconfluence.API
+	spaceId string
 }
 
-func NewConfluence(domain string, username string, token string) *confluence {
+func NewConfluence(domain string, username string, token string, spaceId string) *confluence {
 	client, err := goconfluence.NewAPI(domain+"/wiki/rest/api", username, token)
 	errHandler(err)
 	return &confluence{
-		client: client,
+		client:  client,
+		spaceId: spaceId,
 	}
 }
 
