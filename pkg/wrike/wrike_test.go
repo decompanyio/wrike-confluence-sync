@@ -43,12 +43,14 @@ func TestProjectsByIds(t *testing.T) {
 
 // "2022.03.SP1"로 특정 스프린트 하위 폴더 조회
 func TestSprints(t *testing.T) {
-	sprints := wrikeClient.Sprints("2022.03.SP1")
+	//sprintWeekly := wrikeClient.Sprints("2022년 3월", "https://app-us2.wrike.com/open.htm?id=850512856")
+	sprintWeekly := wrikeClient.Sprints("2022년 3월", "https://www.wrike.com/open.htm?id=865199939")
 
-	fmt.Println(len(sprints))
-	for _, v := range sprints {
-		fmt.Printf("%+v\n\n", v)
+	fmt.Println(len(sprintWeekly))
+	for _, v := range sprintWeekly {
+		fmt.Println(v.Title)
+		fmt.Printf("%+v\n\n", v.Sprints)
 	}
 
-	assert.NotEqual(t, sprints, nil)
+	assert.NotEqual(t, sprintWeekly, nil)
 }

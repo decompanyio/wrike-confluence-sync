@@ -2,14 +2,14 @@ package confluence
 
 import goconfluence "github.com/virtomize/confluence-go-api"
 
-func (c confluence) newContent(ancestorId string, contentSearch goconfluence.ContentSearch) *goconfluence.Content {
+func (c confluence) newContent(ancestorId string, title string, body string, contentSearch goconfluence.ContentSearch) *goconfluence.Content {
 	// 컨플 컨텐트 구조체 생성
 	content := &goconfluence.Content{
-		Title: "Sprint Temp Page",
+		Title: title,
 		Type:  "page",
 		Body: goconfluence.Body{
 			Storage: goconfluence.Storage{
-				Value:          NewTemplate(),
+				Value:          body,
 				Representation: "editor2",
 			},
 		},
