@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	goconfluence "github.com/virtomize/confluence-go-api"
 	"os"
+	"sync"
 	"testing"
 	"wrike-confluence-sync/pkg/wrike"
 )
@@ -53,9 +54,13 @@ func TestCreateContent(t *testing.T) {
 	sprintWeekly := wrikeAPI.Sprints("2022년 3월", "https://www.wrike.com/open.htm?id=865199939")
 	ancestorId := os.Getenv("ANCESTORID")
 
-	var content *goconfluence.Content
+	// 각 주차마다 비동기로 빠르게 처리
+	var wg sync.WaitGroup
+	wg.Add(len(sprintWeekly))
 
-	for _, weekly := range sprintWeekly {
+	// 익명 함수
+	newContent := func(weekly wrike.SprintWeekly) {
+		var content *goconfluence.Content
 		fmt.Println(weekly.Title)
 		title := weekly.Title
 		body := NewTemplate(weekly.Sprints)
@@ -71,7 +76,14 @@ func TestCreateContent(t *testing.T) {
 		content = &goconfluence.Content{}
 		content = cf.newContent(ancestorId, title, body, *contentSearch)
 		fmt.Println(content.Links.Base + content.Links.TinyUI)
-
+		wg.Done()
 	}
-	assert.NotEqual(t, content, nil)
+
+	for _, weekly := range sprintWeekly {
+		go newContent(weekly)
+	}
+	wg.Wait()
+	fmt.Println("Done")
+
+	assert.NotEqual(t, wg, nil)
 }
