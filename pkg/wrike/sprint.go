@@ -2,6 +2,7 @@ package wrike
 
 import (
 	"strings"
+	"sync"
 )
 
 type Sprint struct {
@@ -19,6 +20,7 @@ type SprintWeekly struct {
 func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string) []SprintWeekly {
 	// wrike 스프린트 루트 폴더 (Sprint)
 	projectsD1 := w.ProjectsByLink(sprintRootLink, nil)
+
 	// 스프린트 2 뎁스 조회 - 2022년 04월 프로젝트
 	projectsD2 := w.ProjectsByIds(projectsD1.Data[0].ChildIds)
 	projectD2 := Project{}
@@ -34,25 +36,44 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string) []SprintWee
 	projectsD3 := w.ProjectsByIds(projectD2.ChildIds)
 
 	var sprintWeekly []SprintWeekly
-	for _, folders := range projectsD3.Data {
+
+	// 비동기 처리
+	var wg sync.WaitGroup
+	wg.Add(len(projectsD3.Data))
+
+	convertToSprint := func(p Project) {
 		// 팀원 별 프로젝트 조회 - 2022.04.SP1.anthony
-		foldersPerMember := w.ProjectsByIds(folders.ChildIds)
+		foldersPerMember := w.ProjectsByIds(p.ChildIds)
+		// 비동기 처리
+		var wgChild sync.WaitGroup
+		wgChild.Add(len(foldersPerMember.Data))
 
 		// 팀원 별 프로젝트 하위 작업 조회
-		sprints := []Sprint{}
-		for _, p := range foldersPerMember.Data {
-			sprints = append(sprints, Sprint{
-				AuthorName: strings.Split(p.Title, ".")[3],
-				Tasks:      w.TasksInProject(p.ID),
-			})
+		var sprints []Sprint
+		for _, pMember := range foldersPerMember.Data {
+			go func(pMember Project) {
+				sprints = append(sprints, Sprint{
+					AuthorName: strings.Split(pMember.Title, ".")[3],
+					Tasks:      w.TasksInProject(pMember.ID),
+				})
+				wgChild.Done()
+			}(pMember)
 		}
+		wgChild.Wait()
+
 		// 1주치 Sprint 구조체 생성
 		sprintWeekly = append(sprintWeekly, SprintWeekly{
-			Title:   folders.Title,
+			Title:   p.Title,
 			Sprints: sprints,
 		})
-
+		wg.Done()
 	}
+
+	for _, folders := range projectsD3.Data {
+		go convertToSprint(folders)
+	}
+
+	wg.Wait()
 
 	return sprintWeekly
 }
