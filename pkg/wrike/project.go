@@ -59,7 +59,9 @@ func (w *WrikeClient) ProjectsByLink(link string, urlQuery map[string]string) Pr
 // 프로젝트 & 폴더 - ID로 필터
 func (w *WrikeClient) ProjectsByIds(ids []string) Projects {
 	projects := Projects{}
-	w.newAPI("/folders/"+strings.Join(ids, ","), nil, &projects)
+	if len(ids) > 0 {
+		w.newAPI("/folders/"+strings.Join(ids, ","), nil, &projects)
+	}
 
 	return projects
 }

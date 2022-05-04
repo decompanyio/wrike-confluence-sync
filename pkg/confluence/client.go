@@ -5,16 +5,16 @@ import (
 	"log"
 )
 
-type confluence struct {
-	client  *goconfluence.API
+type ConfluenceClient struct {
+	Client  *goconfluence.API
 	spaceId string
 }
 
-func NewConfluence(domain string, username string, token string, spaceId string) *confluence {
+func NewConfluenceClient(domain string, username string, token string, spaceId string) *ConfluenceClient {
 	client, err := goconfluence.NewAPI(domain+"/wiki/rest/api", username, token)
 	errHandler(err)
-	return &confluence{
-		client:  client,
+	return &ConfluenceClient{
+		Client:  client,
 		spaceId: spaceId,
 	}
 }

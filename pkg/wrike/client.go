@@ -2,6 +2,7 @@ package wrike
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -10,12 +11,13 @@ import (
 const Host string = "https://www.wrike.com/api/v4"
 
 type WrikeClient struct {
+	host       string
 	bearer     string
 	httpClient *http.Client
 }
 
 // WrikeClient 생성자
-func NewWrikeClient(bearer string, httpClient *http.Client) *WrikeClient {
+func NewWrikeClient(host string, bearer string, httpClient *http.Client) *WrikeClient {
 	if len(bearer) == 0 {
 		log.Fatal("토큰이 없습니다.")
 	}
@@ -27,6 +29,7 @@ func NewWrikeClient(bearer string, httpClient *http.Client) *WrikeClient {
 	}
 
 	return &WrikeClient{
+		host:       host,
 		bearer:     bearer,
 		httpClient: httpClient,
 	}
@@ -34,7 +37,7 @@ func NewWrikeClient(bearer string, httpClient *http.Client) *WrikeClient {
 
 // API 공통 모듈 (internal)
 func (w *WrikeClient) newAPI(uri string, urlQuery map[string]string, target interface{}) {
-	req, err := http.NewRequest("GET", Host+uri, nil)
+	req, err := http.NewRequest("GET", w.host+uri, nil)
 	errorHandler(err)
 
 	req.Header.Add("Authorization", "Bearer "+w.bearer)
@@ -52,8 +55,16 @@ func (w *WrikeClient) newAPI(uri string, urlQuery map[string]string, target inte
 
 	defer resp.Body.Close()
 
-	err = json.NewDecoder(resp.Body).Decode(target)
-	errorHandler(err)
+	if resp.StatusCode == http.StatusOK {
+		err = json.NewDecoder(resp.Body).Decode(target)
+		errorHandler(err)
+	} else {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Fatal(string(bodyBytes))
+	}
 }
 
 func errorHandler(err error) {

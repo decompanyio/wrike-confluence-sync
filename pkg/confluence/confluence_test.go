@@ -7,13 +7,16 @@ import (
 	goconfluence "github.com/virtomize/confluence-go-api"
 	"os"
 	"testing"
+	"wrike-confluence-sync/pkg/wrike"
 )
 
-var cf *confluence
+var cf *ConfluenceClient
+
+const sprintRootLink = "https://app-us2.wrike.com/open.htm?id=850512856"
 
 func init() {
 	godotenv.Load()
-	cf = NewConfluence(
+	cf = NewConfluenceClient(
 		os.Getenv("DOMAIN"),
 		os.Getenv("USER"),
 		os.Getenv("TOKEN"),
@@ -23,7 +26,7 @@ func init() {
 
 // 스페이스 리스트 조회
 func TestSpace(t *testing.T) {
-	spaces, err := cf.client.GetAllSpaces(goconfluence.AllSpacesQuery{})
+	spaces, err := cf.Client.GetAllSpaces(goconfluence.AllSpacesQuery{})
 	errHandler(err)
 
 	for i, space := range spaces.Results {
@@ -35,28 +38,27 @@ func TestSpace(t *testing.T) {
 
 // wrike 데이터로 html 동적 생성
 func TestNewTemplate(t *testing.T) {
-	data := NewTemplate()
-	fmt.Println(data)
-	assert.NotEqual(t, data, nil)
+	// wrike 데이터 조회
+	wrikeAPI := wrike.NewWrikeClient(os.Getenv("WRIKE_BASE_URL"), os.Getenv("WRIKE_TOKEN"), nil)
+	sprintWeekly := wrikeAPI.Sprints("2022년 04월", sprintRootLink)
+
+	for _, weekly := range sprintWeekly {
+		data := NewTemplate(weekly.Sprints)
+		fmt.Println(data)
+		assert.NotEqual(t, data, nil)
+	}
 }
 
 func TestCreateContent(t *testing.T) {
-	title := "Sprint Temp Page"
-	ancestorId := os.Getenv("ANCESTORID")
+	syncConfig := SyncConfig{
+		SpMonth:        "2022년 4월",
+		SprintRootLink: sprintRootLink,
+		WrikeBaseUrl:   os.Getenv("WRIKE_BASE_URL"),
+		WrikeToken:     os.Getenv("WRIKE_TOKEN"),
+		AncestorId:     os.Getenv("ANCESTORID"),
+	}
 
-	// 이미 존재하는 페이지인지 title로 조회
-	contentSearch, err := cf.client.GetContent(goconfluence.ContentQuery{
-		Title:  title,
-		Type:   "page",
-		Expand: []string{"version"},
-	})
-	errHandler(err)
+	cf.SyncContent(syncConfig)
 
-	content := &goconfluence.Content{}
-	content = cf.newContent(ancestorId, *contentSearch)
-
-	fmt.Println(content.Status)
-	fmt.Println(content.Links.Base + content.Links.TinyUI)
-
-	assert.NotEqual(t, content, nil)
+	assert.NotEqual(t, 1, nil)
 }

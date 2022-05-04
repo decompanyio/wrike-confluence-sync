@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"os"
+	"runtime"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ var wrikeClient *WrikeClient
 
 func init() {
 	godotenv.Load()
-	wrikeClient = NewWrikeClient(os.Getenv("WRIKE_TOKEN"), nil)
+	wrikeClient = NewWrikeClient(os.Getenv("WRIKE_BASE_URL"), os.Getenv("WRIKE_TOKEN"), nil)
 }
 
 // 프로젝트 리스트 조회
@@ -25,9 +26,9 @@ func TestProject(t *testing.T) {
 
 // 특정 프로젝트 조회 (링크)
 func TestProjectsByLink(t *testing.T) {
-	projects := wrikeClient.ProjectsByLink("https://www.wrike.com/open.htm?id=865199939", nil)
+	projects := wrikeClient.ProjectsByLink("https://app-us2.wrike.com/open.htm?id=850512856", nil)
+	//projects := wrikeClient.ProjectsByLink("https://www.wrike.com/open.htm?id=865199939", nil)
 
-	fmt.Println(len(projects.Data))
 	assert.NotEqual(t, projects, nil)
 }
 
@@ -43,12 +44,17 @@ func TestProjectsByIds(t *testing.T) {
 
 // "2022.03.SP1"로 특정 스프린트 하위 폴더 조회
 func TestSprints(t *testing.T) {
-	sprints := wrikeClient.Sprints("2022.03.SP1")
+	// CPU 최대로 사용
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	fmt.Println(len(sprints))
-	for _, v := range sprints {
-		fmt.Printf("%+v\n\n", v)
+	sprintWeekly := wrikeClient.Sprints("2022년 4월", "https://app-us2.wrike.com/open.htm?id=850512856")
+	//sprintWeekly := wrikeClient.Sprints("2022년 3월", "https://www.wrike.com/open.htm?id=865199939")
+
+	fmt.Println(len(sprintWeekly))
+	for _, v := range sprintWeekly {
+		fmt.Println(v.Title)
+		fmt.Printf("%+v\n\n", v.Sprints)
 	}
 
-	assert.NotEqual(t, sprints, nil)
+	assert.NotEqual(t, sprintWeekly, nil)
 }
