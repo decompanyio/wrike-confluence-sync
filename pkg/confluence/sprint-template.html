@@ -1,13 +1,13 @@
 {{- range . -}}
-<h3><strong>{{ .AuthorName }}</strong><br/></h3>
+<h3><strong>{{ .AuthorName }}</strong></h3>
 <table data-layout="wide">
     <colgroup>
-        <col style="width: 220.0px;" />
-        <col style="width: 60.0px;" />
+        <col style="width: 250.0px;" />
+        <col style="width: 75.0px;" />
+        <col style="width: 70.0px;" />
         <col style="width: 85.0px;" />
         <col style="width: 85.0px;" />
-        <col style="width: 85.0px;" />
-        <col style="width: 220.0px;" />
+        <col style="width: 150.0px;" />
     </colgroup>
     <tbody>
         <tr>
@@ -29,7 +29,7 @@
                     {{- end -}}
                 </a></p>
             </td>
-            <td><p>{{- range .Coworkers -}}{{ .FirstName }}{{- end -}}</p></td>
+            <td><p>{{- range .Coworkers -}}{{ printf "%s " .FirstName }}{{- end -}}</p></td>
             <td><p>{{ .Importance }}</p></td>
             <td><p>{{- if .CreatedDate -}}{{ .CreatedDate.Format "2006-01-02" }}{{- end -}}</p></td>
             <td><p>{{- if .Dates.Due -}}{{ .Dates.Due }}{{- end -}}</p></td>
