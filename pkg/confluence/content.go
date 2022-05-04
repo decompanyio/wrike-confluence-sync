@@ -1,8 +1,13 @@
 package confluence
 
-import goconfluence "github.com/virtomize/confluence-go-api"
+import (
+	"fmt"
+	goconfluence "github.com/virtomize/confluence-go-api"
+	"sync"
+	"wrike-confluence-sync/pkg/wrike"
+)
 
-func (c confluence) newContent(ancestorId string, title string, body string, contentSearch goconfluence.ContentSearch) *goconfluence.Content {
+func (c ConfluenceClient) NewContent(ancestorId string, title string, body string, contentSearch goconfluence.ContentSearch) *goconfluence.Content {
 	// 컨플 컨텐트 구조체 생성
 	content := &goconfluence.Content{
 		Title: title,
@@ -30,11 +35,56 @@ func (c confluence) newContent(ancestorId string, title string, body string, con
 			Number: contentSearch.Results[0].Version.Number + 1,
 		}
 
-		contentResult, err = c.client.UpdateContent(content)
+		contentResult, err = c.Client.UpdateContent(content)
 	} else {
-		contentResult, err = c.client.CreateContent(content)
+		contentResult, err = c.Client.CreateContent(content)
 	}
 	errHandler(err)
 
 	return contentResult
+}
+
+type SyncConfig struct {
+	SpMonth        string
+	SprintRootLink string
+	WrikeBaseUrl   string
+	WrikeToken     string
+	AncestorId     string
+}
+
+func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
+	// wrike 데이터 조회
+	wrikeAPI := wrike.NewWrikeClient(syncConfig.WrikeBaseUrl, syncConfig.WrikeToken, nil)
+	sprintWeekly := wrikeAPI.Sprints(syncConfig.SpMonth, syncConfig.SprintRootLink)
+
+	// 각 주차마다 비동기로 빠르게 처리
+	var wg sync.WaitGroup
+	wg.Add(len(sprintWeekly))
+
+	// 익명 함수
+	newContent := func(weekly wrike.SprintWeekly) {
+		var content *goconfluence.Content
+		fmt.Println(weekly.Title)
+		title := weekly.Title
+		body := NewTemplate(weekly.Sprints)
+
+		// 이미 존재하는 페이지인지 title로 조회
+		contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
+			Title:  title,
+			Type:   "page",
+			Expand: []string{"version"},
+		})
+		errHandler(err)
+
+		content = &goconfluence.Content{}
+		content = c.NewContent(syncConfig.AncestorId, title, body, *contentSearch)
+		fmt.Println(content.Links.Base + content.Links.TinyUI)
+		wg.Done()
+	}
+
+	for _, weekly := range sprintWeekly {
+		go newContent(weekly)
+	}
+	wg.Wait()
+	fmt.Println("Done")
 }
