@@ -63,7 +63,8 @@ func (w *WrikeClient) Tasks() Tasks {
 func (w *WrikeClient) TasksInProject(folderId string) Tasks {
 	tasks := Tasks{}
 	urlQuery := map[string]string{
-		"fields": `["authorIds","responsibleIds"]`,
+		"fields":    `["authorIds","responsibleIds"]`,
+		"sortField": `["DueDate"]`,
 	}
 	w.newAPI("/folders/"+folderId+"/tasks", urlQuery, &tasks)
 	for i, data := range tasks.Data {
