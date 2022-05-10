@@ -2,11 +2,15 @@ package main
 
 import (
 	"github.com/joho/godotenv"
+	"log"
 	"testing"
 )
 
 func init() {
-	godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func TestSync(t *testing.T) {
