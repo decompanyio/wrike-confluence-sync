@@ -45,17 +45,18 @@ func (c ConfluenceClient) NewContent(ancestorId string, title string, body strin
 }
 
 type SyncConfig struct {
-	SpMonth        string
-	SprintRootLink string
-	WrikeBaseUrl   string
-	WrikeToken     string
-	AncestorId     string
+	SpMonth          string
+	SprintRootLink   string
+	WrikeBaseUrl     string
+	WrikeToken       string
+	AncestorId       string
+	ConfluenceDomain string
 }
 
 func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 	// wrike 데이터 조회
 	wrikeAPI := wrike.NewWrikeClient(syncConfig.WrikeBaseUrl, syncConfig.WrikeToken, nil)
-	sprintWeekly := wrikeAPI.Sprints(syncConfig.SpMonth, syncConfig.SprintRootLink)
+	sprintWeekly := wrikeAPI.Sprints(syncConfig.SpMonth, syncConfig.SprintRootLink, syncConfig.ConfluenceDomain)
 
 	// 각 주차마다 비동기로 빠르게 처리
 	var wg sync.WaitGroup

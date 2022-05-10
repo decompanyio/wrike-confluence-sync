@@ -1,6 +1,7 @@
 package wrike
 
 import (
+	"strings"
 	"time"
 )
 
@@ -34,6 +35,7 @@ type Task struct {
 	AuthorIds      []string      `json:"authorIds"`
 	CustomStatusID string        `json:"customStatusId"`
 	HasAttachments bool          `json:"hasAttachments"`
+	Attachments    []Attachment  `json:"attachments"`
 	Permalink      string        `json:"permalink"`
 	Priority       string        `json:"priority"`
 	FollowedByMe   bool          `json:"followedByMe"`
@@ -60,13 +62,14 @@ func (w *WrikeClient) Tasks() Tasks {
 }
 
 // 특정 프로젝트의 작업 조회
-func (w *WrikeClient) TasksInProject(folderId string) Tasks {
+func (w *WrikeClient) TasksInProject(folderId string, confluenceDomain string) Tasks {
 	tasks := Tasks{}
 	urlQuery := map[string]string{
-		"fields":    `["authorIds","responsibleIds"]`,
+		"fields":    `["authorIds","responsibleIds","hasAttachments"]`,
 		"sortField": `DueDate`,
 	}
 	w.newAPI("/folders/"+folderId+"/tasks", urlQuery, &tasks)
+
 	for i, data := range tasks.Data {
 		// 본인 제외 협업담당자
 		for _, responsibleId := range data.ResponsibleIds {
@@ -77,6 +80,15 @@ func (w *WrikeClient) TasksInProject(folderId string) Tasks {
 		// 기한이 이상한 날짜 형식으로 와서 자르기
 		if len(data.Dates.Due) > 0 {
 			tasks.Data[i].Dates.Due = data.Dates.Due[0:10]
+		}
+		// 첨부파일 조회
+		if data.HasAttachments {
+			attachments := w.AttachmentsByTask(data.ID)
+			for _, attachment := range attachments.Data {
+				if strings.Index(attachment.Url, confluenceDomain) > -1 {
+					tasks.Data[i].Attachments = append(tasks.Data[i].Attachments, attachment)
+				}
+			}
 		}
 	}
 	return tasks
