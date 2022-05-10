@@ -17,7 +17,7 @@ type SprintWeekly struct {
 
 // 스프린트 조회 - 스프린트 이름으로 필터
 // 파라미터 예시: "2022.03.SP1"
-func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string) []SprintWeekly {
+func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, confluenceDomain string) []SprintWeekly {
 	// wrike 스프린트 루트 폴더 (Sprint)
 	projectsD1 := w.ProjectsByLink(sprintRootLink, nil)
 
@@ -54,7 +54,7 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string) []SprintWee
 			go func(pMember Project) {
 				sprints = append(sprints, Sprint{
 					AuthorName: strings.Split(pMember.Title, ".")[3],
-					Tasks:      w.TasksInProject(pMember.ID),
+					Tasks:      w.TasksInProject(pMember.ID, confluenceDomain),
 				})
 				wgChild.Done()
 			}(pMember)

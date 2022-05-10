@@ -38,11 +38,12 @@ func main() {
 
 	// 싱크 실행
 	syncConfig := confluence.SyncConfig{
-		SpMonth:        now,
-		SprintRootLink: WRIKE_SPRINT_ROOT_URL,
-		WrikeBaseUrl:   WRIKE_BASE_URL,
-		WrikeToken:     WRIKE_TOKEN,
-		AncestorId:     CONFLUENCE_ANCESTOR_ID,
+		SpMonth:          now,
+		SprintRootLink:   WRIKE_SPRINT_ROOT_URL,
+		WrikeBaseUrl:     WRIKE_BASE_URL,
+		WrikeToken:       WRIKE_TOKEN,
+		AncestorId:       CONFLUENCE_ANCESTOR_ID,
+		ConfluenceDomain: CONFLUENCE_DOMAIN,
 	}
 	cfClient.SyncContent(syncConfig)
 }
