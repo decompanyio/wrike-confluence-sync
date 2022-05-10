@@ -33,10 +33,7 @@
             <td><p>{{ .Importance }}</p></td>
             <td><p>{{- if .CreatedDate -}}{{ .CreatedDate.Format "2006-01-02" }}{{- end -}}</p></td>
             <td><p>{{- if .Dates.Due -}}{{ .Dates.Due }}{{- end -}}</p></td>
-            <td><p></p></td>
-<!--            추후 wrike의 링크로 산출물 자동완성 요청 오면 사용 -->
-<!--            <td><p><a href="https://co-jesh.atlassian.net/wiki/pages/resumedraft.action?draftId=196823"-->
-<!--                      data-card-appearance="inline">https://co-jesh.atlassian.net/wiki/pages/resumedraft.action?draftId=196823</a></p></td>-->
+            <td>{{- range .Attachments -}}<p><a href="{{ .Url }}" data-card-appearance="inline">{{ .Url }}</a></p>{{- end -}}</td>
         </tr>
         {{- end -}}
     </tbody>
