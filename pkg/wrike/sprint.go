@@ -1,6 +1,7 @@
 package wrike
 
 import (
+	"sort"
 	"strings"
 	"sync"
 )
@@ -60,6 +61,9 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, confluenceD
 			}(pMember)
 		}
 		wgChild.Wait()
+		
+		// 이름 순으로 정렬
+		sort.Slice(sprints, func(i, j int) bool { return sprints[i].AuthorName < sprints[j].AuthorName })
 
 		// 1주치 Sprint 구조체 생성
 		sprintWeekly = append(sprintWeekly, SprintWeekly{
