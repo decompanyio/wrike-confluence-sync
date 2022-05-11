@@ -33,14 +33,20 @@ func main() {
 	// 클라이언트 생성
 	cfClient = confluence.NewConfluenceClient(CONFLUENCE_DOMAIN, CONFLUENCE_USER, CONFLUENCE_TOKEN, CONFLUENCE_SPACEID)
 
-	// 싱크 실행
+	// 매핑할 산출물 도메인 설정
+	outputDomains := []string{
+		CONFLUENCE_DOMAIN,
+		"https://www.polarissharetech.net",
+	}
+
+	// 동기화 실행
 	syncConfig := confluence.SyncConfig{
-		SpMonth:          now,
-		SprintRootLink:   WRIKE_SPRINT_ROOT_URL,
-		WrikeBaseUrl:     WRIKE_BASE_URL,
-		WrikeToken:       WRIKE_TOKEN,
-		AncestorId:       CONFLUENCE_ANCESTOR_ID,
-		ConfluenceDomain: CONFLUENCE_DOMAIN,
+		SpMonth:        now,
+		SprintRootLink: WRIKE_SPRINT_ROOT_URL,
+		WrikeBaseUrl:   WRIKE_BASE_URL,
+		WrikeToken:     WRIKE_TOKEN,
+		AncestorId:     CONFLUENCE_ANCESTOR_ID,
+		OutputDomains:  outputDomains,
 	}
 	cfClient.SyncContent(syncConfig)
 }

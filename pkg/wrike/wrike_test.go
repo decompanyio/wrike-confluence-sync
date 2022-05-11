@@ -11,14 +11,14 @@ import (
 )
 
 var (
-	wrikeClient      *WrikeClient
-	confluenceDomain string
+	wrikeClient   *WrikeClient
+	outputDomains []string
 )
 
 func init() {
 	godotenv.Load()
 	wrikeClient = NewWrikeClient(os.Getenv("WRIKE_BASE_URL"), os.Getenv("WRIKE_TOKEN"), nil)
-	confluenceDomain = os.Getenv("CONFLUENCE_DOMAIN")
+	outputDomains = []string{os.Getenv("CONFLUENCE_DOMAIN"), "https://www.polarissharetech.net"}
 }
 
 // 프로젝트 리스트 조회
@@ -49,7 +49,7 @@ func TestProjectsByIds(t *testing.T) {
 
 // 폴더 ID로 TASK 조회
 func TestTasksInProject(t *testing.T) {
-	tasks := wrikeClient.TasksInProject("IEACTJ64I42AQ7PZ", confluenceDomain)
+	tasks := wrikeClient.TasksInProject("IEACTJ64I42AQ7PZ", outputDomains)
 
 	fmt.Println(prettyPrint(tasks.Data))
 	assert.NotEqual(t, tasks, nil)
@@ -60,7 +60,7 @@ func TestSprints(t *testing.T) {
 	// CPU 최대로 사용
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	sprintWeekly := wrikeClient.Sprints("2022년 4월", "https://app-us2.wrike.com/open.htm?id=850512856", confluenceDomain)
+	sprintWeekly := wrikeClient.Sprints("2022년 4월", "https://app-us2.wrike.com/open.htm?id=850512856", outputDomains)
 	//sprintWeekly := wrikeClient.Sprints("2022년 3월", "https://www.wrike.com/open.htm?id=865199939")
 
 	fmt.Println(len(sprintWeekly))
