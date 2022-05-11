@@ -45,18 +45,18 @@ func (c ConfluenceClient) NewContent(ancestorId string, title string, body strin
 }
 
 type SyncConfig struct {
-	SpMonth          string
-	SprintRootLink   string
-	WrikeBaseUrl     string
-	WrikeToken       string
-	AncestorId       string
-	ConfluenceDomain string
+	SpMonth        string
+	SprintRootLink string
+	WrikeBaseUrl   string
+	WrikeToken     string
+	AncestorId     string
+	OutputDomains  []string
 }
 
 func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 	// wrike 데이터 조회
 	wrikeAPI := wrike.NewWrikeClient(syncConfig.WrikeBaseUrl, syncConfig.WrikeToken, nil)
-	sprintWeekly := wrikeAPI.Sprints(syncConfig.SpMonth, syncConfig.SprintRootLink, syncConfig.ConfluenceDomain)
+	sprintWeekly := wrikeAPI.Sprints(syncConfig.SpMonth, syncConfig.SprintRootLink, syncConfig.OutputDomains)
 
 	// 각 주차마다 비동기로 빠르게 처리
 	var wg sync.WaitGroup
@@ -65,7 +65,7 @@ func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 	// 익명 함수
 	newContent := func(weekly wrike.SprintWeekly) {
 		var content *goconfluence.Content
-		fmt.Println(weekly.Title)
+		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", weekly.Title)
 		title := weekly.Title
 		body := NewTemplate(weekly.Sprints)
 
@@ -79,7 +79,8 @@ func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 
 		content = &goconfluence.Content{}
 		content = c.NewContent(syncConfig.AncestorId, title, body, *contentSearch)
-		fmt.Println(content.Links.Base + content.Links.TinyUI)
+		fmt.Println(content.Links.Base)
+		fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", weekly.Title, content.Links.Base+content.Links.TinyUI)
 		wg.Done()
 	}
 

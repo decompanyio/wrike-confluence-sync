@@ -1,7 +1,7 @@
 package wrike
 
 import (
-	"strings"
+	"github.com/cloudflare/ahocorasick"
 	"time"
 )
 
@@ -62,13 +62,19 @@ func (w *WrikeClient) Tasks() Tasks {
 }
 
 // 특정 프로젝트의 작업 조회
-func (w *WrikeClient) TasksInProject(folderId string, confluenceDomain string) Tasks {
+func (w *WrikeClient) TasksInProject(folderId string, outputDomains []string) Tasks {
 	tasks := Tasks{}
 	urlQuery := map[string]string{
 		"fields":    `["authorIds","responsibleIds","hasAttachments"]`,
 		"sortField": `DueDate`,
 	}
 	w.newAPI("/folders/"+folderId+"/tasks", urlQuery, &tasks)
+
+	// 산출물 도메인 필터
+	m := ahocorasick.NewStringMatcher(outputDomains)
+	outputFilter := func(url string) bool {
+		return len(m.Match([]byte(url))) > 0
+	}
 
 	for i, data := range tasks.Data {
 		// 본인 제외 협업담당자
@@ -85,7 +91,8 @@ func (w *WrikeClient) TasksInProject(folderId string, confluenceDomain string) T
 		if data.HasAttachments {
 			attachments := w.AttachmentsByTask(data.ID)
 			for _, attachment := range attachments.Data {
-				if strings.Index(attachment.Url, confluenceDomain) > -1 {
+				// 성능을 위해 ahocorasick 알고리즘 사용
+				if outputFilter(attachment.Url) {
 					tasks.Data[i].Attachments = append(tasks.Data[i].Attachments, attachment)
 				}
 			}
