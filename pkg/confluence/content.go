@@ -79,7 +79,6 @@ func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 
 		content = &goconfluence.Content{}
 		content = c.NewContent(syncConfig.AncestorId, title, body, *contentSearch)
-		fmt.Println(content.Links.Base)
 		fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", weekly.Title, content.Links.Base+content.Links.TinyUI)
 		wg.Done()
 	}
