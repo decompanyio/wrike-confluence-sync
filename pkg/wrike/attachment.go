@@ -1,6 +1,9 @@
 package wrike
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type Attachments struct {
 	Kind string       `json:"kind"`
@@ -29,4 +32,8 @@ func (w *WrikeClient) AttachmentsByTask(taskId string) Attachments {
 	w.newAPI("/tasks/"+taskId+"/attachments", urlQuery, &attachments)
 
 	return attachments
+}
+
+func (a *Attachment) IsDomain(domain string) bool {
+	return strings.Index(a.Url, domain) > -1
 }

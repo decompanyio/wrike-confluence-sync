@@ -40,10 +40,10 @@ func TestSpace(t *testing.T) {
 func TestNewTemplate(t *testing.T) {
 	// wrike 데이터 조회
 	wrikeAPI := wrike.NewWrikeClient(os.Getenv("WRIKE_BASE_URL"), os.Getenv("WRIKE_TOKEN"), nil)
-	sprintWeekly := wrikeAPI.Sprints("2022년 04월", sprintRootLink)
+	sprintWeekly := wrikeAPI.Sprints("2022년 04월", sprintRootLink, []string{"https://google.com"})
 
 	for _, weekly := range sprintWeekly {
-		data := NewTemplate(weekly.Sprints)
+		data := NewTemplate(weekly.Sprints, os.Getenv("DOMAIN"))
 		fmt.Println(data)
 		assert.NotEqual(t, data, nil)
 	}

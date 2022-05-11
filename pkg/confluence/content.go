@@ -45,12 +45,13 @@ func (c ConfluenceClient) NewContent(ancestorId string, title string, body strin
 }
 
 type SyncConfig struct {
-	SpMonth        string
-	SprintRootLink string
-	WrikeBaseUrl   string
-	WrikeToken     string
-	AncestorId     string
-	OutputDomains  []string
+	SpMonth          string
+	SprintRootLink   string
+	WrikeBaseUrl     string
+	WrikeToken       string
+	AncestorId       string
+	OutputDomains    []string
+	ConfluenceDomain string
 }
 
 func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
@@ -67,7 +68,7 @@ func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 		var content *goconfluence.Content
 		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", weekly.Title)
 		title := weekly.Title
-		body := NewTemplate(weekly.Sprints)
+		body := NewTemplate(weekly.Sprints, syncConfig.ConfluenceDomain)
 
 		// 이미 존재하는 페이지인지 title로 조회
 		contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
