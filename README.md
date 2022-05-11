@@ -14,6 +14,5 @@ wrike-confluence-sync
 │   │  └── ...
 │   └──wrike               # wrike API moudle
 │      └── ...
-├── sprint-template.html   # confluence 페이지 html 템플릿
 └── main.go                # 메인 함수
 ```

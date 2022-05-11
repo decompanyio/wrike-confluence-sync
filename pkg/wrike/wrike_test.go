@@ -11,14 +11,16 @@ import (
 )
 
 var (
-	wrikeClient   *WrikeClient
-	outputDomains []string
+	wrikeClient      *WrikeClient
+	outputDomains    []string
+	confluenceDomain string
 )
 
 func init() {
 	godotenv.Load()
 	wrikeClient = NewWrikeClient(os.Getenv("WRIKE_BASE_URL"), os.Getenv("WRIKE_TOKEN"), nil)
 	outputDomains = []string{os.Getenv("CONFLUENCE_DOMAIN"), "https://www.polarissharetech.net"}
+	confluenceDomain = os.Getenv("CONFLUENCE_DOMAIN")
 }
 
 // 프로젝트 리스트 조회
