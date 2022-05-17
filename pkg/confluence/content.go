@@ -66,7 +66,6 @@ func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 	// 익명 함수
 	newContent := func(weekly wrike.SprintWeekly) {
 		var content *goconfluence.Content
-		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", weekly.Title)
 		title := weekly.Title
 		body := NewTemplate(weekly.Sprints, syncConfig.ConfluenceDomain)
 

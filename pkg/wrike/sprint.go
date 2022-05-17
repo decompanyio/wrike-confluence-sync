@@ -1,9 +1,11 @@
 package wrike
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Sprint struct {
@@ -38,16 +40,13 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 
 	var sprintWeekly []SprintWeekly
 
-	// 비동기 처리
-	var wg sync.WaitGroup
-	wg.Add(len(projectsD3.Data))
-
 	convertToSprint := func(p Project) {
 		// 팀원 별 프로젝트 조회 - 2022.04.SP1.anthony
 		foldersPerMember := w.ProjectsByIds(p.ChildIds)
+
 		// 비동기 처리
-		var wgChild sync.WaitGroup
-		wgChild.Add(len(foldersPerMember.Data))
+		var wg sync.WaitGroup
+		wg.Add(len(foldersPerMember.Data))
 
 		// 팀원 별 프로젝트 하위 작업 조회
 		var sprints []Sprint
@@ -57,10 +56,10 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 					AuthorName: strings.Split(pMember.Title, ".")[3],
 					Tasks:      w.TasksInProject(pMember.ID, outputDomains),
 				})
-				wgChild.Done()
+				wg.Done()
 			}(pMember)
 		}
-		wgChild.Wait()
+		wg.Wait()
 
 		// 이름 순으로 정렬
 		sort.Slice(sprints, func(i, j int) bool { return sprints[i].AuthorName < sprints[j].AuthorName })
@@ -70,14 +69,16 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 			Title:   p.Title,
 			Sprints: sprints,
 		})
-		wg.Done()
 	}
 
 	for _, folders := range projectsD3.Data {
-		go convertToSprint(folders)
-	}
+		fmt.Println("wrike API 분당 호출 제한 때문에 2초 대기")
+		time.Sleep(2 * time.Second)
+		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", folders.Title)
 
-	wg.Wait()
+		convertToSprint(folders)
+
+	}
 
 	return sprintWeekly
 }
