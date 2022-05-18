@@ -27,18 +27,7 @@ type Project struct {
 	} `json:"project,omitempty"`
 }
 
-// 프로젝트 & 폴더 - 전체 조회
-func (w *WrikeClient) Projects(urlQuery map[string]string) Projects {
-	if urlQuery == nil {
-		urlQuery = map[string]string{
-			"deleted": "false",
-		}
-	}
-	projects := Projects{}
-	w.newAPI("/folders", urlQuery, &projects)
-
-	return projects
-}
+type AllFolderMap map[string]Project
 
 // 프로젝트 & 폴더 - 고정 링크로 필터
 func (w *WrikeClient) ProjectsByLink(link string, urlQuery map[string]string) Projects {
@@ -65,4 +54,21 @@ func (w *WrikeClient) ProjectsByIds(ids []string) Projects {
 	}
 
 	return projects
+}
+
+func (w *WrikeClient) FolderAll() AllFolderMap {
+	var folders Projects
+	urlQuery := map[string]string{
+		"deleted": "false",
+		"project": "false",
+		"fields":  `["description"]`,
+	}
+	w.newAPI("/spaces/"+w.spaceId+"/folders", urlQuery, &folders)
+
+	allFolderMap := AllFolderMap{}
+	for _, folder := range folders.Data {
+		allFolderMap[folder.ID] = folder
+	}
+
+	return allFolderMap
 }

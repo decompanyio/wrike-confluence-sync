@@ -29,6 +29,13 @@ func init() {
 // 프로젝트 리스트 조회
 func TestProject(t *testing.T) {
 	projects := wrikeClient.Projects(nil)
+// 모든 폴더 조회
+func TestFoldersAll(t *testing.T) {
+	folders := wrikeClient.FolderAll()
+
+	fmt.Println(prettyPrint(folders))
+	assert.NotEqual(t, len(folders), 0)
+}
 
 	fmt.Println(len(projects.Data))
 	assert.NotEqual(t, projects, nil)
