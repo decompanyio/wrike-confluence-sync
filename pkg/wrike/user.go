@@ -18,17 +18,32 @@ type User struct {
 		Admin     bool   `json:"admin"`
 		Owner     bool   `json:"owner"`
 	} `json:"profiles"`
-	AvatarURL string `json:"avatarUrl"`
-	Timezone  string `json:"timezone"`
-	Locale    string `json:"locale"`
-	Deleted   bool   `json:"deleted"`
-	Me        bool   `json:"me"`
-	Phone     string `json:"phone"`
+	AvatarURL   string   `json:"avatarUrl"`
+	Timezone    string   `json:"timezone"`
+	Locale      string   `json:"locale"`
+	Deleted     bool     `json:"deleted"`
+	Title       string   `json:"title,omitempty"`
+	CompanyName string   `json:"companyName,omitempty"`
+	Phone       string   `json:"phone,omitempty"`
+	Location    string   `json:"location,omitempty"`
+	Me          bool     `json:"me,omitempty"`
+	MemberIds   []string `json:"memberIds,omitempty"`
+	MyTeam      bool     `json:"myTeam,omitempty"`
 }
 
-func (w *WrikeClient) User(userId string) User {
-	users := Users{}
-	w.newAPI("/users/"+userId, nil, &users)
+type AllUserMap map[string]User
 
-	return users.Data[0]
+func (w *WrikeClient) UserAll() AllUserMap {
+	users := Users{}
+	urlQuery := map[string]string{
+		"deleted": `false`,
+	}
+	w.newAPI("/contacts", urlQuery, &users)
+
+	userAll := AllUserMap{}
+	for _, user := range users.Data {
+		userAll[user.ID] = user
+	}
+
+	return userAll
 }

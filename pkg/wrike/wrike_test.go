@@ -26,9 +26,14 @@ func init() {
 	confluenceDomain = os.Getenv("CONFLUENCE_DOMAIN")
 }
 
-// 프로젝트 리스트 조회
-func TestProject(t *testing.T) {
-	projects := wrikeClient.Projects(nil)
+// 유저 조회
+func TestUsers(t *testing.T) {
+	users := wrikeClient.UserAll()
+
+	fmt.Println(prettyPrint(users))
+	assert.NotEqual(t, len(users), 0)
+}
+
 // 모든 폴더 조회
 func TestFoldersAll(t *testing.T) {
 	folders := wrikeClient.FolderAll()
