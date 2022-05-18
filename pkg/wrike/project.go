@@ -11,12 +11,13 @@ type Projects struct {
 }
 
 type Project struct {
-	ID       string   `json:"id"`
-	Title    string   `json:"title"`
-	Children []string `json:"children"`
-	ChildIds []string `json:"childIds"`
-	Scope    string   `json:"scope"`
-	Project  struct {
+	ID          string   `json:"id"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Children    []string `json:"children"`
+	ChildIds    []string `json:"childIds"`
+	Scope       string   `json:"scope"`
+	Project     struct {
 		AuthorID       string    `json:"authorId"`
 		OwnerIds       []string  `json:"ownerIds"`
 		CustomStatusID string    `json:"customStatusId"`

@@ -6,7 +6,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"os"
-	"runtime"
 	"testing"
 )
 
@@ -33,17 +32,16 @@ func TestProject(t *testing.T) {
 
 // 특정 프로젝트 조회 (링크)
 func TestProjectsByLink(t *testing.T) {
-	projects := wrikeClient.ProjectsByLink("https://app-us2.wrike.com/open.htm?id=850512856", nil)
+	projects := wrikeClient.ProjectsByLink("https://app-us2.wrike.com/open.htm?id=897180682", nil)
+	println(prettyPrint(projects))
 	//projects := wrikeClient.ProjectsByLink("https://www.wrike.com/open.htm?id=865199939", nil)
-
 	assert.NotEqual(t, projects, nil)
 }
 
 // ID로 프로젝트 조회
 func TestProjectsByIds(t *testing.T) {
-	projects := wrikeClient.ProjectsByLink("https://www.wrike.com/open.htm?id=865199939", nil)
+	projects := wrikeClient.ProjectsByLink("https://www.wrike.com/open.htm?id=897180682", nil)
 	projectsSearch := wrikeClient.ProjectsByIds(projects.Data[0].ChildIds)
-
 	fmt.Println(len(projectsSearch.Data))
 	fmt.Printf("%+v\n", projectsSearch.Data)
 	assert.NotEqual(t, projectsSearch, nil)
@@ -54,15 +52,12 @@ func TestTasksInProject(t *testing.T) {
 	tasks := wrikeClient.TasksInProject("IEACTJ64I42AQ7PZ", outputDomains)
 
 	fmt.Println(prettyPrint(tasks.Data))
-	assert.NotEqual(t, tasks, nil)
+	assert.NotEqual(t, tasks.Data, nil)
 }
 
 // "2022.03.SP1"로 특정 스프린트 하위 폴더 조회
 func TestSprints(t *testing.T) {
-	// CPU 최대로 사용
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	sprintWeekly := wrikeClient.Sprints("2022년 4월", "https://app-us2.wrike.com/open.htm?id=850512856", outputDomains)
+	sprintWeekly := wrikeClient.Sprints("2022년 5월", "https://app-us2.wrike.com/open.htm?id=850512856", outputDomains)
 	//sprintWeekly := wrikeClient.Sprints("2022년 3월", "https://www.wrike.com/open.htm?id=865199939")
 
 	fmt.Println(len(sprintWeekly))
@@ -71,7 +66,7 @@ func TestSprints(t *testing.T) {
 		fmt.Println(prettyPrint(v.Sprints))
 	}
 
-	assert.NotEqual(t, sprintWeekly, nil)
+	assert.Greater(t, len(sprintWeekly), 0)
 }
 
 func prettyPrint(i interface{}) string {
