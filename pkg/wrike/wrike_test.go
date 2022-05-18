@@ -42,8 +42,14 @@ func TestFoldersAll(t *testing.T) {
 	assert.NotEqual(t, len(folders), 0)
 }
 
-	fmt.Println(len(projects.Data))
-	assert.NotEqual(t, projects, nil)
+// 모든 작업 조회
+func TestTaskAll(t *testing.T) {
+	tasks := wrikeClient.TaskAll("IEACTJ64I42PUE7V")
+
+	fmt.Println(prettyPrint(tasks))
+	assert.NotEqual(t, len(tasks), 0)
+}
+
 // 모든 첨부파일 조회
 func TestAttachmentAll(t *testing.T) {
 	attachments := wrikeClient.AttachmentAll()
