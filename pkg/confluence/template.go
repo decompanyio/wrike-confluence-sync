@@ -11,6 +11,7 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	html := `
 {{- range . -}}
 <h3><strong>{{ .AuthorName }}</strong></h3>
+{{- .SprintGoal -}}
 <table data-layout="wide">
     <colgroup>
         <col style="width: 250.0px;" />
@@ -75,5 +76,13 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	// 태그 사이 공백 제거
 	// 예시: </th>  <th>  ==> </th><th>
 	result := strings.ReplaceAll(tmplString.String(), `/\>\s+\</m`, `><`)
+	result = escapeSpecialHTML(result)
 	return result
+}
+
+func escapeSpecialHTML(str string) string {
+	str = strings.Replace(str, `&lt;`, `<`, -1)
+	str = strings.Replace(str, `&gt;`, `>`, -1)
+	str = strings.Replace(str, `&amp;`, `&`, -1)
+	return str
 }
