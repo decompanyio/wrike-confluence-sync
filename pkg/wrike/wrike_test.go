@@ -75,14 +75,6 @@ func TestProjectsByIds(t *testing.T) {
 	assert.NotEqual(t, projectsSearch, nil)
 }
 
-// 폴더 ID로 TASK 조회
-func TestTasksInProject(t *testing.T) {
-	tasks := wrikeClient.TasksInProject("IEACTJ64I42AQ7PZ", outputDomains)
-
-	fmt.Println(prettyPrint(tasks.Data))
-	assert.NotEqual(t, tasks.Data, nil)
-}
-
 // "2022.03.SP1"로 특정 스프린트 하위 폴더 조회
 func TestSprints(t *testing.T) {
 	sprintWeekly := wrikeClient.Sprints("2022년 5월", "https://app-us2.wrike.com/open.htm?id=850512856", outputDomains)
