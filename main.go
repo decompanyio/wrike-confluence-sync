@@ -8,17 +8,6 @@ import (
 )
 
 var (
-	CONFLUENCE_DOMAIN      string
-	CONFLUENCE_USER        string
-	CONFLUENCE_TOKEN       string
-	CONFLUENCE_SPACEID     string
-	CONFLUENCE_ANCESTOR_ID string
-	WRIKE_BASE_URL         string
-	WRIKE_TOKEN            string
-	WRIKE_SPRINT_ROOT_URL  string
-)
-
-var (
 	cfClient *confluence.ConfluenceClient
 )
 
@@ -45,12 +34,25 @@ func main() {
 		SprintRootLink:   WRIKE_SPRINT_ROOT_URL,
 		WrikeBaseUrl:     WRIKE_BASE_URL,
 		WrikeToken:       WRIKE_TOKEN,
+		WrikeSpaceId:     WRIKE_SPACE_ID,
 		AncestorId:       CONFLUENCE_ANCESTOR_ID,
 		OutputDomains:    outputDomains,
 		ConfluenceDomain: CONFLUENCE_DOMAIN,
 	}
 	cfClient.SyncContent(syncConfig)
 }
+
+var (
+	CONFLUENCE_DOMAIN      string
+	CONFLUENCE_USER        string
+	CONFLUENCE_TOKEN       string
+	CONFLUENCE_SPACEID     string
+	CONFLUENCE_ANCESTOR_ID string
+	WRIKE_BASE_URL         string
+	WRIKE_TOKEN            string
+	WRIKE_SPACE_ID         string
+	WRIKE_SPRINT_ROOT_URL  string
+)
 
 func configure() {
 	CONFLUENCE_DOMAIN = os.Getenv("CONFLUENCE_DOMAIN")
@@ -60,6 +62,7 @@ func configure() {
 	CONFLUENCE_ANCESTOR_ID = os.Getenv("CONFLUENCE_ANCESTOR_ID")
 	WRIKE_BASE_URL = os.Getenv("WRIKE_BASE_URL")
 	WRIKE_TOKEN = os.Getenv("WRIKE_TOKEN")
+	WRIKE_SPACE_ID = os.Getenv("WRIKE_SPACE_ID")
 	WRIKE_SPRINT_ROOT_URL = os.Getenv("WRIKE_SPRINT_ROOT_URL")
 }
 

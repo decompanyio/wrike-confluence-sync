@@ -17,7 +17,11 @@ var (
 
 func init() {
 	godotenv.Load()
-	wrikeClient = NewWrikeClient(os.Getenv("WRIKE_BASE_URL"), os.Getenv("WRIKE_TOKEN"), nil)
+	wrikeClient = NewWrikeClient(
+		os.Getenv("WRIKE_BASE_URL"),
+		os.Getenv("WRIKE_TOKEN"),
+		os.Getenv("WRIKE_SPACE_ID"),
+		nil)
 	outputDomains = []string{os.Getenv("CONFLUENCE_DOMAIN"), "https://www.polarissharetech.net"}
 	confluenceDomain = os.Getenv("CONFLUENCE_DOMAIN")
 }
@@ -28,6 +32,12 @@ func TestProject(t *testing.T) {
 
 	fmt.Println(len(projects.Data))
 	assert.NotEqual(t, projects, nil)
+// 모든 첨부파일 조회
+func TestAttachmentAll(t *testing.T) {
+	attachments := wrikeClient.AttachmentAll()
+
+	fmt.Println(prettyPrint(attachments))
+	assert.NotEqual(t, len(attachments), 0)
 }
 
 // 특정 프로젝트 조회 (링크)
