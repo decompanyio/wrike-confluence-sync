@@ -11,6 +11,7 @@ import (
 type Sprint struct {
 	AuthorName string `json:"authorName"`
 	Tasks      Tasks  `json:"tasks"`
+	SprintGoal string `json:"sprintGoal"`
 }
 
 type SprintWeekly struct {
@@ -55,6 +56,7 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 				sprints = append(sprints, Sprint{
 					AuthorName: strings.Split(pMember.Title, ".")[3],
 					Tasks:      w.TasksInProject(pMember.ID, outputDomains),
+					SprintGoal: pMember.Description,
 				})
 				wg.Done()
 			}(pMember)
@@ -70,14 +72,12 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 			Sprints: sprints,
 		})
 	}
-
 	for _, folders := range projectsD3.Data {
 		fmt.Println("wrike API 분당 호출 제한 때문에 2초 대기")
 		time.Sleep(2 * time.Second)
 		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", folders.Title)
 
 		convertToSprint(folders)
-
 	}
 
 	return sprintWeekly
