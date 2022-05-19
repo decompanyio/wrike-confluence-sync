@@ -20,7 +20,12 @@ func main() {
 	now := time.Now().In(loc).Format("2006년 1월")
 
 	// 클라이언트 생성
-	cfClient = confluence.NewConfluenceClient(CONFLUENCE_DOMAIN, CONFLUENCE_USER, CONFLUENCE_TOKEN, CONFLUENCE_SPACEID)
+	cfClient = confluence.NewConfluenceClient(
+		CONFLUENCE_DOMAIN,
+		CONFLUENCE_USER,
+		CONFLUENCE_TOKEN,
+		CONFLUENCE_SPACEID,
+	)
 
 	// 매핑할 산출물 도메인 설정
 	outputDomains := []string{
