@@ -25,31 +25,26 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 	// wrike 스프린트 루트 폴더 (Sprint)
 	rootProject := w.ProjectsByLink(sprintRootLink, nil)
 
-	// 산출물 도메인 필터
-	m := ahocorasick.NewStringMatcher(outputDomains)
-	outputFilter := func(url string) bool {
-		return len(m.Match([]byte(url))) > 0
-	}
-
 	// API 호출 제한 때문에 전체를 가져와서 필터링
 	var userAll = w.UserAll()
-	findUserById := func(id string) User {
-		return userAll[id]
+	findUserById := func(userId string) User {
+		return userAll[userId]
 	}
 
 	var attachmentAll = w.AttachmentAll()
-	findAttachmentByTaskId := func(id string) []Attachment {
-		return attachmentAll[id]
+	findAttachmentByTaskId := func(taskId string) []Attachment {
+		return attachmentAll[taskId]
 	}
 
 	var folderAll = w.FolderAll()
-	findFolderByIds := func(ids []string) []Project {
+	findFolderByIds := func(folderIds []string) []Project {
 		var projectTemp []Project
-		for _, id := range ids {
+		for _, id := range folderIds {
 			projectTemp = append(projectTemp, folderAll[id])
 		}
 		return projectTemp
 	}
+
 	// 스프린트 2 뎁스 조회 - 2022년 04월
 	projectsD2 := findFolderByIds(rootProject.Data[0].ChildIds)
 	projectD2 := Project{}
@@ -58,6 +53,12 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 			projectD2 = p
 			break
 		}
+	}
+
+	// 산출물 도메인 필터
+	m := ahocorasick.NewStringMatcher(outputDomains)
+	outputFilter := func(url string) bool {
+		return len(m.Match([]byte(url))) > 0
 	}
 
 	var tasksAll = w.TaskAll(projectD2.ID)
@@ -109,9 +110,10 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 		var sprints []Sprint
 		for _, pMember := range foldersPerMember {
 			go func(pMember Project) {
+				authorName := strings.Split(pMember.Title, ".")[3]
 				sprints = append(sprints, Sprint{
-					AuthorName: strings.Split(pMember.Title, ".")[3],
-					Tasks:      findTaskByIds(pMember.ID, strings.Split(pMember.Title, ".")[3]),
+					AuthorName: authorName,
+					Tasks:      findTaskByIds(pMember.ID, authorName),
 					SprintGoal: pMember.Description,
 				})
 				wgChild.Done()
@@ -130,8 +132,6 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 		wg.Done()
 	}
 	for _, folders := range projectsD3.Data {
-		//fmt.Println("wrike API 분당 호출 제한 때문에 2초 대기")
-		//time.Sleep(2 * time.Second)
 		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", folders.Title)
 		go convertToSprint(folders)
 	}

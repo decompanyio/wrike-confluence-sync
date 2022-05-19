@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	wrikeClient      *WrikeClient
-	outputDomains    []string
-	confluenceDomain string
+	wrikeClient   *WrikeClient
+	outputDomains []string
 )
 
 func init() {
@@ -23,7 +22,6 @@ func init() {
 		os.Getenv("WRIKE_SPACE_ID"),
 		nil)
 	outputDomains = []string{os.Getenv("CONFLUENCE_DOMAIN"), "https://www.polarissharetech.net"}
-	confluenceDomain = os.Getenv("CONFLUENCE_DOMAIN")
 }
 
 // 유저 조회
@@ -31,7 +29,7 @@ func TestUsers(t *testing.T) {
 	users := wrikeClient.UserAll()
 
 	fmt.Println(prettyPrint(users))
-	assert.NotEqual(t, len(users), 0)
+	assert.Greater(t, len(users), 0)
 }
 
 // 모든 폴더 조회
@@ -39,7 +37,7 @@ func TestFoldersAll(t *testing.T) {
 	folders := wrikeClient.FolderAll()
 
 	fmt.Println(prettyPrint(folders))
-	assert.NotEqual(t, len(folders), 0)
+	assert.Greater(t, len(folders), 0)
 }
 
 // 모든 작업 조회
@@ -47,7 +45,7 @@ func TestTaskAll(t *testing.T) {
 	tasks := wrikeClient.TaskAll("IEACTJ64I42PUE7V")
 
 	fmt.Println(prettyPrint(tasks))
-	assert.NotEqual(t, len(tasks), 0)
+	assert.Greater(t, len(tasks), 0)
 }
 
 // 모든 첨부파일 조회
@@ -55,7 +53,7 @@ func TestAttachmentAll(t *testing.T) {
 	attachments := wrikeClient.AttachmentAll()
 
 	fmt.Println(prettyPrint(attachments))
-	assert.NotEqual(t, len(attachments), 0)
+	assert.Greater(t, len(attachments), 0)
 }
 
 // 특정 프로젝트 조회 (링크)
@@ -63,7 +61,7 @@ func TestProjectsByLink(t *testing.T) {
 	projects := wrikeClient.ProjectsByLink("https://app-us2.wrike.com/open.htm?id=897180682", nil)
 	println(prettyPrint(projects))
 	//projects := wrikeClient.ProjectsByLink("https://www.wrike.com/open.htm?id=865199939", nil)
-	assert.NotEqual(t, projects, nil)
+	assert.Greater(t, len(projects.Data), 0)
 }
 
 // ID로 프로젝트 조회
@@ -72,7 +70,7 @@ func TestProjectsByIds(t *testing.T) {
 	projectsSearch := wrikeClient.ProjectsByIds(projects.Data[0].ChildIds)
 	fmt.Println(len(projectsSearch.Data))
 	fmt.Printf("%+v\n", projectsSearch.Data)
-	assert.NotEqual(t, projectsSearch, nil)
+	assert.Greater(t, len(projectsSearch.Data), 0)
 }
 
 // "2022.03.SP1"로 특정 스프린트 하위 폴더 조회
