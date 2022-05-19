@@ -32,7 +32,8 @@ func (c ConfluenceClient) NewContent(ancestorId string, title string, body strin
 	if contentSearch.Size > 0 {
 		content.ID = contentSearch.Results[0].ID
 		content.Version = &goconfluence.Version{
-			Number: contentSearch.Results[0].Version.Number + 1,
+			Number:    contentSearch.Results[0].Version.Number + 1,
+			MinorEdit: true, // 관찰자에게 알리지 않음
 		}
 
 		contentResult, err = c.Client.UpdateContent(content)
