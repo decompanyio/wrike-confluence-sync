@@ -1,7 +1,6 @@
 package wrike
 
 import (
-	"github.com/cloudflare/ahocorasick"
 	"time"
 )
 
@@ -53,52 +52,26 @@ type Task struct {
 	} `json:"customFields"`
 }
 
-// 작업 전체 조회
-func (w *WrikeClient) Tasks() Tasks {
-	tasks := Tasks{}
-	w.newAPI("/tasks", nil, &tasks)
+type AllTaskMap map[string][]Task
 
-	return tasks
-}
-
-// 특정 프로젝트의 작업 조회
-func (w *WrikeClient) TasksInProject(folderId string, outputDomains []string) Tasks {
+// 모든 작업 조회
+func (w *WrikeClient) TaskAll(rootFolderId string) AllTaskMap {
 	tasks := Tasks{}
 	urlQuery := map[string]string{
-		"status":    `["Active","Completed"]`,
-		"fields":    `["authorIds","responsibleIds","hasAttachments"]`,
-		"sortField": `DueDate`,
-		"subTasks":  `true`,
+		"status":      `["Active","Completed"]`,
+		"fields":      `["authorIds","responsibleIds","hasAttachments","parentIds"]`,
+		"descendants": "true",
+		"subTasks":    "true",
+		"sortField":   `DueDate`,
 	}
-	w.newAPI("/folders/"+folderId+"/tasks", urlQuery, &tasks)
+	w.newAPI("/folders/"+rootFolderId+"/tasks", urlQuery, &tasks)
 
-	// 산출물 도메인 필터
-	m := ahocorasick.NewStringMatcher(outputDomains)
-	outputFilter := func(url string) bool {
-		return len(m.Match([]byte(url))) > 0
+	taskAll := AllTaskMap{}
+	for _, task := range tasks.Data {
+		for _, id := range task.ParentIds {
+			taskAll[id] = append(taskAll[id], task)
+		}
 	}
 
-	for i, data := range tasks.Data {
-		// 본인 제외 협업담당자
-		for _, responsibleId := range data.ResponsibleIds {
-			if data.AuthorIds[0] != responsibleId {
-				tasks.Data[i].Coworkers = append(tasks.Data[i].Coworkers, w.User(responsibleId))
-			}
-		}
-		// 기한이 이상한 날짜 형식으로 와서 자르기
-		if len(data.Dates.Due) > 0 {
-			tasks.Data[i].Dates.Due = data.Dates.Due[0:10]
-		}
-		// 첨부파일 조회
-		if data.HasAttachments {
-			attachments := w.AttachmentsByTask(data.ID)
-			for _, attachment := range attachments.Data {
-				// 성능을 위해 ahocorasick 알고리즘 사용
-				if outputFilter(attachment.Url) {
-					tasks.Data[i].Attachments = append(tasks.Data[i].Attachments, attachment)
-				}
-			}
-		}
-	}
-	return tasks
+	return taskAll
 }

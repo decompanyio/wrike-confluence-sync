@@ -13,11 +13,12 @@ const Host string = "https://www.wrike.com/api/v4"
 type WrikeClient struct {
 	host       string
 	bearer     string
+	spaceId    string
 	httpClient *http.Client
 }
 
 // WrikeClient 생성자
-func NewWrikeClient(host string, bearer string, httpClient *http.Client) *WrikeClient {
+func NewWrikeClient(host string, bearer string, spaceId string, httpClient *http.Client) *WrikeClient {
 	if len(bearer) == 0 {
 		log.Fatal("토큰이 없습니다.")
 	}
@@ -31,6 +32,7 @@ func NewWrikeClient(host string, bearer string, httpClient *http.Client) *WrikeC
 	return &WrikeClient{
 		host:       host,
 		bearer:     bearer,
+		spaceId:    spaceId,
 		httpClient: httpClient,
 	}
 }

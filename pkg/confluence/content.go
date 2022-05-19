@@ -49,6 +49,7 @@ type SyncConfig struct {
 	SprintRootLink   string
 	WrikeBaseUrl     string
 	WrikeToken       string
+	WrikeSpaceId     string
 	AncestorId       string
 	OutputDomains    []string
 	ConfluenceDomain string
@@ -56,8 +57,14 @@ type SyncConfig struct {
 
 func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 	// wrike 데이터 조회
-	wrikeAPI := wrike.NewWrikeClient(syncConfig.WrikeBaseUrl, syncConfig.WrikeToken, nil)
-	sprintWeekly := wrikeAPI.Sprints(syncConfig.SpMonth, syncConfig.SprintRootLink, syncConfig.OutputDomains)
+	wrikeAPI := wrike.NewWrikeClient(
+		syncConfig.WrikeBaseUrl,
+		syncConfig.WrikeToken,
+		syncConfig.WrikeSpaceId,
+		nil)
+	sprintWeekly := wrikeAPI.Sprints(syncConfig.SpMonth,
+		syncConfig.SprintRootLink,
+		syncConfig.OutputDomains)
 
 	// 각 주차마다 비동기로 빠르게 처리
 	var wg sync.WaitGroup

@@ -38,6 +38,7 @@ jobs:
           CONFLUENCE_ANCESTOR_ID: ${{ secrets.CONFLUENCE_ANCESTOR_ID }}
           WRIKE_BASE_URL: ${{ secrets.WRIKE_BASE_URL }}
           WRIKE_TOKEN: ${{ secrets.WRIKE_TOKEN }}
+          WRIKE_SPACE_ID: ${{ secrets.WRIKE_SPACE_ID }}
           WRIKE_SPRINT_ROOT_URL: ${{ secrets.WRIKE_SPRINT_ROOT_URL }}
         run: go run main.go
 

@@ -39,7 +39,11 @@ func TestSpace(t *testing.T) {
 // wrike 데이터로 html 동적 생성
 func TestNewTemplate(t *testing.T) {
 	// wrike 데이터 조회
-	wrikeAPI := wrike.NewWrikeClient(os.Getenv("WRIKE_BASE_URL"), os.Getenv("WRIKE_TOKEN"), nil)
+	wrikeAPI := wrike.NewWrikeClient(
+		os.Getenv("WRIKE_BASE_URL"),
+		os.Getenv("WRIKE_TOKEN"),
+		os.Getenv("WRIKE_SPACE_ID"),
+		nil)
 	sprintWeekly := wrikeAPI.Sprints("2022년 04월", sprintRootLink, []string{"https://google.com"})
 
 	for _, weekly := range sprintWeekly {

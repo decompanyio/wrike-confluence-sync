@@ -30,7 +30,7 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
             <th><p><strong>기한</strong></p></th>
             <th><p><strong>산출물</strong></p></th>
         </tr>
-        {{- range .Tasks.Data -}}
+        {{- range .Tasks -}}
         <tr>
             <td>
                 <p><a href="{{ .Permalink }}">

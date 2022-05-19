@@ -23,17 +23,23 @@ type Attachment struct {
 	Url         string    `json:"url,omitempty"`
 }
 
-// 작업 ID로 첨부파일 조회
-func (w *WrikeClient) AttachmentsByTask(taskId string) Attachments {
+type AllAttachmentMap map[string][]Attachment
+
+func (a *Attachment) IsDomain(domain string) bool {
+	return strings.Index(a.Url, domain) > -1
+}
+
+func (w *WrikeClient) AttachmentAll() AllAttachmentMap {
 	urlQuery := map[string]string{
 		"withUrls": `true`,
 	}
 	attachments := Attachments{}
-	w.newAPI("/tasks/"+taskId+"/attachments", urlQuery, &attachments)
+	w.newAPI("/attachments", urlQuery, &attachments)
 
-	return attachments
-}
+	attachmentAll := AllAttachmentMap{}
+	for _, attachment := range attachments.Data {
+		attachmentAll[attachment.TaskID] = append(attachmentAll[attachment.TaskID], attachment)
+	}
 
-func (a *Attachment) IsDomain(domain string) bool {
-	return strings.Index(a.Url, domain) > -1
+	return attachmentAll
 }
