@@ -26,6 +26,8 @@ func main() {
 	outputDomains := []string{
 		CONFLUENCE_DOMAIN,
 		"https://www.polarissharetech.net",
+		"https://www.figma.com",
+		"https://www.polarisoffice.com",
 	}
 
 	// 동기화 실행
