@@ -9,6 +9,7 @@ import (
 func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	// html 템플릿 생성
 	html := `
+<ac:structured-macro ac:name="toc" ac:schema-version="1" data-layout="default"><ac:parameter ac:name="minLevel">1</ac:parameter><ac:parameter ac:name="maxLevel">7</ac:parameter><ac:parameter ac:name="type">flat</ac:parameter></ac:structured-macro>
 {{- range . -}}
 <h3><strong>{{ .AuthorName }}</strong></h3>
 {{- .SprintGoal -}}
