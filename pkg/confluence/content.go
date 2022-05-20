@@ -96,30 +96,27 @@ func (c *Client) SyncContent(syncConfig SyncConfig) {
 	var wg sync.WaitGroup
 	wg.Add(len(sprintWeekly))
 
-	// 익명 함수
-	newContent := func(weekly wrike.SprintWeekly) {
-		var content *goconfluence.Content
-		title := weekly.Title
-		body := NewTemplate(weekly.Sprints, syncConfig.ConfluenceDomain)
-
-		// 이미 존재하는 페이지인지 title로 조회
-		contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
-			Title:    title,
-			Type:     "page",
-			Expand:   []string{"version"},
-			SpaceKey: c.spaceId,
-		})
-		errHandler(err)
-
-		// 페이지 생성/수정
-		content = &goconfluence.Content{}
-		content = c.NewContent(parentId, title, body, *contentSearch)
-		fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", weekly.Title, content.Links.Base+content.Links.TinyUI)
-		wg.Done()
-	}
-
 	for _, weekly := range sprintWeekly {
-		go newContent(weekly)
+		go func(weekly wrike.SprintWeekly) {
+			var content *goconfluence.Content
+			title := weekly.Title
+			body := NewTemplate(weekly, syncConfig.ConfluenceDomain)
+
+			// 이미 존재하는 페이지인지 title로 조회
+			contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
+				Title:    title,
+				Type:     "page",
+				Expand:   []string{"version"},
+				SpaceKey: c.spaceId,
+			})
+			errHandler(err)
+
+			// 페이지 생성/수정
+			content = &goconfluence.Content{}
+			content = c.NewContent(parentId, title, body, *contentSearch)
+			fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", weekly.Title, content.Links.Base+content.Links.TinyUI)
+			wg.Done()
+		}(weekly)
 	}
 	wg.Wait()
 	fmt.Println("Done")

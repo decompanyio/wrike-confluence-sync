@@ -15,8 +15,51 @@ type Sprint struct {
 }
 
 type SprintWeekly struct {
-	Title   string `json:"title"`
-	Sprints []Sprint
+	Title                string `json:"title"`
+	Sprints              []Sprint
+	ImportanceStatistics map[string]*ImportanceStatistic
+}
+
+type ImportanceStatistic struct {
+	Active          int
+	Completed       int
+	CompletePercent int
+	Total           int
+	TaskMap         map[string]Task
+}
+
+func (sw *SprintWeekly) analyzeImportance() {
+	// 초기화 안하면 nil pointer 에러 발생
+	sw.ImportanceStatistics["High"] = &ImportanceStatistic{
+		TaskMap: map[string]Task{},
+	}
+	sw.ImportanceStatistics["Normal"] = &ImportanceStatistic{
+		TaskMap: map[string]Task{},
+	}
+	for _, sprint := range sw.Sprints {
+		for _, task := range sprint.Tasks {
+			switch task.Importance {
+			case "High":
+				sw.ImportanceStatistics["High"].TaskMap[task.ID] = task
+			case "Normal":
+				sw.ImportanceStatistics["Normal"].TaskMap[task.ID] = task
+			}
+		}
+	}
+	for _, is := range sw.ImportanceStatistics {
+		for _, task := range is.TaskMap {
+			switch task.Status {
+			case "Active":
+				is.Active++
+			case "Completed":
+				is.Completed++
+			}
+			is.Total = is.Active + is.Completed
+			if is.Total > 0 {
+				is.CompletePercent = is.Completed * 100 / is.Total
+			}
+		}
+	}
 }
 
 // Sprints 스프린트 조회 - 스프린트 이름으로 필터
@@ -96,7 +139,8 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 	// 하위 폴더 조회 - 2022.04.SPX
 	projectsD3 := w.ProjectsByIds(projectD2.ChildIds)
 
-	var sprintWeekly []SprintWeekly
+	var sprintWeeklyList []SprintWeekly
+
 	// goroutine 설정
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
@@ -136,15 +180,18 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 
 			// 1주치 Sprint 구조체 생성
 			mutex.Lock()
-			sprintWeekly = append(sprintWeekly, SprintWeekly{
-				Title:   p.Title,
-				Sprints: sprints,
-			})
+			sprintWeekly := SprintWeekly{
+				Title:                p.Title,
+				Sprints:              sprints,
+				ImportanceStatistics: map[string]*ImportanceStatistic{},
+			}
+			sprintWeekly.analyzeImportance()
+			sprintWeeklyList = append(sprintWeeklyList, sprintWeekly)
 			mutex.Unlock()
 			wg.Done()
 		}(folder)
 	}
 	wg.Wait()
 
-	return sprintWeekly
+	return sprintWeeklyList
 }

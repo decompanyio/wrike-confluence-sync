@@ -17,7 +17,38 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	// html 템플릿 생성
 	html := `
 <ac:structured-macro ac:name="toc" ac:schema-version="1" data-layout="default"><ac:parameter ac:name="minLevel">1</ac:parameter><ac:parameter ac:name="maxLevel">7</ac:parameter><ac:parameter ac:name="type">flat</ac:parameter></ac:structured-macro>
-{{- range . -}}
+
+<ac:layout>
+<ac:layout-section ac:type="two_equal" ac:breakout-mode="default">
+{{- range $key, $obj := .ImportanceStatistics -}}
+	<ac:layout-cell>
+		<ac:structured-macro ac:name="info" ac:schema-version="1">
+			<ac:rich-text-body>
+				<p>{{- if eq $key "High" -}}<ac:emoticon ac:name="blue-star" ac:emoji-shortname=":exclamation:" ac:emoji-fallback="❗" />{{- end -}}[중요도 {{ $key }}] 진행률: {{ $obj.CompletePercent }}% ({{ $obj.Completed }}/{{ $obj.Total }} 완료)</p>
+			</ac:rich-text-body>
+		</ac:structured-macro>
+		<ac:structured-macro ac:name="expand" ac:schema-version="1">
+			<ac:rich-text-body>
+				<ul>
+				{{- range $taskId, $task := $obj.TaskMap -}}
+				<li>
+					<p><a href="{{ .Permalink }}">
+						{{- if eq $task.Status "Completed" -}}
+							<del>{{ $task.Title }}</del>
+						{{- else -}}
+							{{ $task.Title }}
+						{{- end -}}
+					</a></p>
+				</li>
+				{{- end -}}
+				</ul>
+			</ac:rich-text-body>
+		</ac:structured-macro>
+	</ac:layout-cell>
+{{- end -}}
+</ac:layout-section>
+
+{{- range .Sprints -}}
 <h3><strong>{{ .AuthorName }}</strong></h3>
 {{- .SprintGoal -}}
 <table data-layout="wide">

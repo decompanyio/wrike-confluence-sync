@@ -80,8 +80,7 @@ func TestSprints(t *testing.T) {
 
 	fmt.Println(len(sprintWeekly))
 	for _, v := range sprintWeekly {
-		fmt.Println(v.Title)
-		fmt.Println(prettyPrint(v.Sprints))
+		fmt.Println(prettyPrint(v.ImportanceStatistics["Normal"]))
 	}
 
 	assert.Greater(t, len(sprintWeekly), 0)
