@@ -30,18 +30,18 @@ type Task struct {
 		Start    string `json:"start"`
 		Due      string `json:"due"`
 	} `json:"dates"`
-	Scope          string        `json:"scope"`
-	AuthorIds      []string      `json:"authorIds"`
-	CustomStatusID string        `json:"customStatusId"`
-	HasAttachments bool          `json:"hasAttachments"`
-	Attachments    []Attachment  `json:"attachments"`
-	Permalink      string        `json:"permalink"`
-	Priority       string        `json:"priority"`
-	FollowedByMe   bool          `json:"followedByMe"`
-	FollowerIds    []string      `json:"followerIds"`
-	SuperTaskIds   []string      `json:"superTaskIds"`
-	SubTaskIds     []interface{} `json:"subTaskIds"`
-	DependencyIds  []string      `json:"dependencyIds"`
+	Scope          string       `json:"scope"`
+	AuthorIds      []string     `json:"authorIds"`
+	CustomStatusID string       `json:"customStatusId"`
+	HasAttachments bool         `json:"hasAttachments"`
+	Attachments    []Attachment `json:"attachments"`
+	Permalink      string       `json:"permalink"`
+	Priority       string       `json:"priority"`
+	FollowedByMe   bool         `json:"followedByMe"`
+	FollowerIds    []string     `json:"followerIds"`
+	SuperTaskIds   []string     `json:"superTaskIds"`
+	SubTaskIds     []string     `json:"subTaskIds"`
+	DependencyIds  []string     `json:"dependencyIds"`
 	Metadata       []struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
@@ -52,26 +52,37 @@ type Task struct {
 	} `json:"customFields"`
 }
 
-type AllTaskMap map[string][]Task
+// key: task의 ParentId
+type TaskMapByParentIdAll map[string][]Task
+
+// key: task의 Id
+type TaskMapByTaskIdAll map[string]Task
 
 // 모든 작업 조회
-func (w *WrikeClient) TaskAll(rootFolderId string) AllTaskMap {
+func (w *WrikeClient) TaskAll(rootFolderId string) (TaskMapByParentIdAll, TaskMapByTaskIdAll) {
 	tasks := Tasks{}
 	urlQuery := map[string]string{
 		"status":      `["Active","Completed"]`,
-		"fields":      `["authorIds","responsibleIds","hasAttachments","parentIds"]`,
+		"fields":      `["authorIds","responsibleIds","hasAttachments","parentIds","subTaskIds"]`,
 		"descendants": "true",
 		"subTasks":    "true",
 		"sortField":   `DueDate`,
 	}
 	w.newAPI("/folders/"+rootFolderId+"/tasks", urlQuery, &tasks)
 
-	taskAll := AllTaskMap{}
+	// map key: 작업의 부모 ID
+	taskMapByParentIdAll := TaskMapByParentIdAll{}
 	for _, task := range tasks.Data {
-		for _, id := range task.ParentIds {
-			taskAll[id] = append(taskAll[id], task)
+		for _, parentId := range task.ParentIds {
+			taskMapByParentIdAll[parentId] = append(taskMapByParentIdAll[parentId], task)
 		}
 	}
 
-	return taskAll
+	// map key: 작업의 ID
+	taskMapByTaskIdAll := TaskMapByTaskIdAll{}
+	for _, task := range tasks.Data {
+		taskMapByTaskIdAll[task.ID] = task
+	}
+
+	return taskMapByParentIdAll, taskMapByTaskIdAll
 }

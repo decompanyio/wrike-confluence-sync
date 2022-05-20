@@ -61,9 +61,15 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 		return len(m.Match([]byte(url))) > 0
 	}
 
-	var tasksAll = w.TaskAll(projectD2.ID)
-	findTaskByIds := func(id string, authorName string) []Task {
-		var taskTemp = tasksAll[id]
+	tasksAllPerParentId, tasksAllPerTaskId := w.TaskAll(projectD2.ID)
+	findTaskByIds := func(parentId string, authorName string) []Task {
+		var taskTemp = tasksAllPerParentId[parentId]
+		// 하위 작업 조회
+		for _, task := range taskTemp {
+			for _, subTaskId := range task.SubTaskIds {
+				taskTemp = append(taskTemp, tasksAllPerTaskId[subTaskId])
+			}
+		}
 		for i, task := range taskTemp {
 			// 본인 제외 협업담당자
 			for _, responsibleId := range task.ResponsibleIds {
@@ -87,6 +93,16 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 				}
 			}
 		}
+		// 작업을 기한(오름차순), 이름(오름차순) 순으로 정렬
+		sort.Slice(taskTemp, func(i, j int) bool {
+			switch strings.Compare(taskTemp[i].Dates.Due, taskTemp[j].Dates.Due) {
+			case -1:
+				return true
+			case 1:
+				return false
+			}
+			return taskTemp[i].Title < taskTemp[j].Title
+		})
 		return taskTemp
 	}
 
@@ -96,6 +112,7 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 	var sprintWeekly []SprintWeekly
 	// 비동기 처리
 	var wg sync.WaitGroup
+	var mutex sync.Mutex
 	wg.Add(len(projectsD3.Data))
 
 	convertToSprint := func(p Project) {
@@ -104,6 +121,7 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 
 		// 비동기 처리
 		var wgChild sync.WaitGroup
+		var mutexChild sync.Mutex
 		wgChild.Add(len(foldersPerMember))
 
 		// 팀원 별 프로젝트 하위 작업 조회
@@ -111,11 +129,13 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 		for _, pMember := range foldersPerMember {
 			go func(pMember Project) {
 				authorName := strings.Split(pMember.Title, ".")[3]
+				mutexChild.Lock()
 				sprints = append(sprints, Sprint{
 					AuthorName: authorName,
 					Tasks:      findTaskByIds(pMember.ID, authorName),
 					SprintGoal: pMember.Description,
 				})
+				mutexChild.Unlock()
 				wgChild.Done()
 			}(pMember)
 		}
@@ -125,10 +145,12 @@ func (w *WrikeClient) Sprints(spMonth string, sprintRootLink string, outputDomai
 		sort.Slice(sprints, func(i, j int) bool { return sprints[i].AuthorName < sprints[j].AuthorName })
 
 		// 1주치 Sprint 구조체 생성
+		mutex.Lock()
 		sprintWeekly = append(sprintWeekly, SprintWeekly{
 			Title:   p.Title,
 			Sprints: sprints,
 		})
+		mutex.Unlock()
 		wg.Done()
 	}
 	for _, folders := range projectsD3.Data {

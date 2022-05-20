@@ -42,7 +42,7 @@ func TestFoldersAll(t *testing.T) {
 
 // 모든 작업 조회
 func TestTaskAll(t *testing.T) {
-	tasks := wrikeClient.TaskAll("IEACTJ64I42PUE7V")
+	tasks := wrikeClient.TaskAllPerParentId("IEACTJ64I42PUE7V")
 
 	fmt.Println(prettyPrint(tasks))
 	assert.Greater(t, len(tasks), 0)
