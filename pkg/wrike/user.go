@@ -33,7 +33,11 @@ type User struct {
 
 type AllUserMap map[string]User
 
-func (w *WrikeClient) UserAll() AllUserMap {
+func (aum *AllUserMap) findUser(userId string) User {
+	return (*aum)[userId]
+}
+
+func (w *Client) UserAll() AllUserMap {
 	users := Users{}
 	urlQuery := map[string]string{
 		"deleted": `false`,

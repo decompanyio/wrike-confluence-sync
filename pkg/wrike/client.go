@@ -5,20 +5,22 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 )
 
-const Host string = "https://www.wrike.com/api/v4"
-
-type WrikeClient struct {
+type Client struct {
 	host       string
 	bearer     string
 	spaceId    string
 	httpClient *http.Client
 }
 
-// WrikeClient 생성자
-func NewWrikeClient(host string, bearer string, spaceId string, httpClient *http.Client) *WrikeClient {
+// NewWrikeClient 생성자
+func NewWrikeClient(host string, bearer string, spaceId string, httpClient *http.Client) *Client {
+	hostValid, err := url.ParseRequestURI(host)
+	errorHandler(err)
+
 	if len(bearer) == 0 {
 		log.Fatal("토큰이 없습니다.")
 	}
@@ -29,8 +31,8 @@ func NewWrikeClient(host string, bearer string, spaceId string, httpClient *http
 		}
 	}
 
-	return &WrikeClient{
-		host:       host,
+	return &Client{
+		host:       hostValid.String(),
 		bearer:     bearer,
 		spaceId:    spaceId,
 		httpClient: httpClient,
@@ -38,7 +40,7 @@ func NewWrikeClient(host string, bearer string, spaceId string, httpClient *http
 }
 
 // API 공통 모듈 (internal)
-func (w *WrikeClient) newAPI(uri string, urlQuery map[string]string, target interface{}) {
+func (w *Client) newAPI(uri string, urlQuery map[string]string, target interface{}) {
 	req, err := http.NewRequest("GET", w.host+uri, nil)
 	errorHandler(err)
 

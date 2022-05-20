@@ -1,14 +1,13 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 	"wrike-confluence-sync/pkg/confluence"
 )
 
 var (
-	cfClient *confluence.ConfluenceClient
+	cfClient *confluence.Client
 )
 
 func main() {
@@ -71,10 +70,4 @@ func configure() {
 	WRIKE_TOKEN = os.Getenv("WRIKE_TOKEN")
 	WRIKE_SPACE_ID = os.Getenv("WRIKE_SPACE_ID")
 	WRIKE_SPRINT_ROOT_URL = os.Getenv("WRIKE_SPRINT_ROOT_URL")
-}
-
-func errHandler(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
 }

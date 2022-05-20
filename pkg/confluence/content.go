@@ -7,7 +7,30 @@ import (
 	"wrike-confluence-sync/pkg/wrike"
 )
 
-func (c ConfluenceClient) NewContent(ancestorId string, title string, body string, contentSearch goconfluence.ContentSearch) *goconfluence.Content {
+type SyncConfig struct {
+	SpMonth          string
+	SprintRootLink   string
+	WrikeBaseUrl     string
+	WrikeToken       string
+	WrikeSpaceId     string
+	AncestorId       string
+	OutputDomains    []string
+	ConfluenceDomain string
+}
+
+func (c *Client) checkContentExist(title string) (bool, goconfluence.ContentSearch) {
+	contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
+		Title:    title,
+		Type:     "page",
+		Expand:   []string{"version"},
+		SpaceKey: c.spaceId,
+	})
+	errHandler(err)
+
+	return contentSearch.Size > 0, *contentSearch
+}
+
+func (c Client) NewContent(ancestorId string, title string, body string, contentSearch goconfluence.ContentSearch) *goconfluence.Content {
 	// 컨플 컨텐트 구조체 생성
 	content := &goconfluence.Content{
 		Title: title,
@@ -45,18 +68,7 @@ func (c ConfluenceClient) NewContent(ancestorId string, title string, body strin
 	return contentResult
 }
 
-type SyncConfig struct {
-	SpMonth          string
-	SprintRootLink   string
-	WrikeBaseUrl     string
-	WrikeToken       string
-	WrikeSpaceId     string
-	AncestorId       string
-	OutputDomains    []string
-	ConfluenceDomain string
-}
-
-func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
+func (c *Client) SyncContent(syncConfig SyncConfig) {
 	// Root 페이지 하위에 이미 sprint 페이지가 있는지 조회
 	// 페이지명: yyyy년 MM월 Sprint
 	// parentId 페이지 하위에 동기화
@@ -111,16 +123,4 @@ func (c *ConfluenceClient) SyncContent(syncConfig SyncConfig) {
 	}
 	wg.Wait()
 	fmt.Println("Done")
-}
-
-func (c *ConfluenceClient) checkContentExist(title string) (bool, goconfluence.ContentSearch) {
-	contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
-		Title:    title,
-		Type:     "page",
-		Expand:   []string{"version"},
-		SpaceKey: c.spaceId,
-	})
-	errHandler(err)
-
-	return contentSearch.Size > 0, *contentSearch
 }

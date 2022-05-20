@@ -52,14 +52,14 @@ type Task struct {
 	} `json:"customFields"`
 }
 
-// key: task의 ParentId
+// TaskMapByParentIdAll key: task의 ParentId
 type TaskMapByParentIdAll map[string][]Task
 
-// key: task의 Id
+// TaskMapByTaskIdAll key: task의 Id
 type TaskMapByTaskIdAll map[string]Task
 
-// 모든 작업 조회
-func (w *WrikeClient) TaskAll(rootFolderId string) (TaskMapByParentIdAll, TaskMapByTaskIdAll) {
+// TaskAll 모든 작업 조회 후 parentId를 키로 하는 map과 taskId를 키로 하는 map 2개를 반환
+func (w *Client) TaskAll(rootFolderId string) (TaskMapByParentIdAll, TaskMapByTaskIdAll) {
 	tasks := Tasks{}
 	urlQuery := map[string]string{
 		"status":      `["Active","Completed"]`,

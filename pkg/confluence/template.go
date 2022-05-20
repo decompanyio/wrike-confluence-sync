@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+func escapeSpecialHTML(str string) string {
+	str = strings.Replace(str, `&lt;`, `<`, -1)
+	str = strings.Replace(str, `&gt;`, `>`, -1)
+	str = strings.Replace(str, `&amp;`, `&`, -1)
+	return str
+}
+
 func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	// html 템플릿 생성
 	html := `
@@ -79,11 +86,4 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	result := strings.ReplaceAll(tmplString.String(), `/\>\s+\</m`, `><`)
 	result = escapeSpecialHTML(result)
 	return result
-}
-
-func escapeSpecialHTML(str string) string {
-	str = strings.Replace(str, `&lt;`, `<`, -1)
-	str = strings.Replace(str, `&gt;`, `>`, -1)
-	str = strings.Replace(str, `&amp;`, `&`, -1)
-	return str
 }

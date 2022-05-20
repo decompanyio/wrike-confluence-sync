@@ -10,7 +10,7 @@ import (
 	"wrike-confluence-sync/pkg/wrike"
 )
 
-var cf *ConfluenceClient
+var cf *Client
 
 const sprintRootLink = "https://app-us2.wrike.com/open.htm?id=850512856"
 

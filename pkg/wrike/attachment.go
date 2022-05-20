@@ -25,11 +25,8 @@ type Attachment struct {
 
 type AllAttachmentMap map[string][]Attachment
 
-func (a *Attachment) IsDomain(domain string) bool {
-	return strings.Index(a.Url, domain) > -1
-}
-
-func (w *WrikeClient) AttachmentAll() AllAttachmentMap {
+// AttachmentAll 모든 첨부파일 조회 후 parentId를 키인 map 반환
+func (w *Client) AttachmentAll() AllAttachmentMap {
 	urlQuery := map[string]string{
 		"withUrls": `true`,
 	}
@@ -42,4 +39,12 @@ func (w *WrikeClient) AttachmentAll() AllAttachmentMap {
 	}
 
 	return attachmentAll
+}
+
+func (a *Attachment) IsDomain(domain string) bool {
+	return strings.Index(a.Url, domain) > -1
+}
+
+func (aam *AllAttachmentMap) findByTaskId(taskId string) []Attachment {
+	return (*aam)[taskId]
 }

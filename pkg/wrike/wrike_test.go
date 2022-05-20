@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	wrikeClient   *WrikeClient
+	wrikeClient   *Client
 	outputDomains []string
 )
 
@@ -42,10 +42,10 @@ func TestFoldersAll(t *testing.T) {
 
 // 모든 작업 조회
 func TestTaskAll(t *testing.T) {
-	tasks := wrikeClient.TaskAllPerParentId("IEACTJ64I42PUE7V")
+	tasksParentId, tasksTaskId := wrikeClient.TaskAll("IEACTJ64I42PUE7V")
 
-	fmt.Println(prettyPrint(tasks))
-	assert.Greater(t, len(tasks), 0)
+	assert.Greater(t, len(tasksParentId), 0)
+	assert.Greater(t, len(tasksTaskId), 0)
 }
 
 // 모든 첨부파일 조회

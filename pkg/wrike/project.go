@@ -29,8 +29,34 @@ type Project struct {
 
 type AllFolderMap map[string]Project
 
-// 프로젝트 & 폴더 - 고정 링크로 필터
-func (w *WrikeClient) ProjectsByLink(link string, urlQuery map[string]string) Projects {
+func (afm *AllFolderMap) findFolderByIds(folderIds []string) []Project {
+	var projectTemp []Project
+	for _, id := range folderIds {
+		projectTemp = append(projectTemp, (*afm)[id])
+	}
+	return projectTemp
+}
+
+// FolderAll 모든 폴더 조회(프로젝트 제외) 후 folderId가 키인 map 반환
+func (w *Client) FolderAll() AllFolderMap {
+	var folders Projects
+	urlQuery := map[string]string{
+		"deleted": "false",
+		"project": "false",
+		"fields":  `["description"]`,
+	}
+	w.newAPI("/spaces/"+w.spaceId+"/folders", urlQuery, &folders)
+
+	allFolderMap := AllFolderMap{}
+	for _, folder := range folders.Data {
+		allFolderMap[folder.ID] = folder
+	}
+
+	return allFolderMap
+}
+
+// ProjectsByLink 프로젝트 & 폴더 - 고정 링크로 필터
+func (w *Client) ProjectsByLink(link string, urlQuery map[string]string) Projects {
 	if urlQuery == nil {
 		urlQuery = map[string]string{
 			"deleted": "false",
@@ -46,29 +72,12 @@ func (w *WrikeClient) ProjectsByLink(link string, urlQuery map[string]string) Pr
 	return projects
 }
 
-// 프로젝트 & 폴더 - ID로 필터
-func (w *WrikeClient) ProjectsByIds(ids []string) Projects {
+// ProjectsByIds 프로젝트 & 폴더 - ID로 필터
+func (w *Client) ProjectsByIds(ids []string) Projects {
 	projects := Projects{}
 	if len(ids) > 0 {
 		w.newAPI("/folders/"+strings.Join(ids, ","), nil, &projects)
 	}
 
 	return projects
-}
-
-func (w *WrikeClient) FolderAll() AllFolderMap {
-	var folders Projects
-	urlQuery := map[string]string{
-		"deleted": "false",
-		"project": "false",
-		"fields":  `["description"]`,
-	}
-	w.newAPI("/spaces/"+w.spaceId+"/folders", urlQuery, &folders)
-
-	allFolderMap := AllFolderMap{}
-	for _, folder := range folders.Data {
-		allFolderMap[folder.ID] = folder
-	}
-
-	return allFolderMap
 }
