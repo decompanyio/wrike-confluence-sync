@@ -54,10 +54,10 @@ func (sw *SprintWeekly) analyzeImportance() {
 			case "Completed":
 				is.Completed++
 			}
-			is.Total = is.Active + is.Completed
-			if is.Total > 0 {
-				is.CompletePercent = is.Completed * 100 / is.Total
-			}
+		}
+		is.Total = is.Active + is.Completed
+		if is.Total > 0 {
+			is.CompletePercent = is.Completed * 100 / is.Total
 		}
 	}
 }
