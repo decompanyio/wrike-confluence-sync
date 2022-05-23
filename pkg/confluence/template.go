@@ -74,24 +74,28 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
             <td>
                 <p><a href="{{ .Permalink }}">
                     {{- if eq .Status "Completed" -}}
-                    <del>{{ .Title }}</del>
+                    	<del>{{ .Title }}</del>
                     {{- else -}}
-                    {{ .Title }}
+						{{ .Title }}
                     {{- end -}}
                 </a></p>
             </td>
             <td><p>{{- range .Coworkers -}}{{ printf "%s " .FirstName }}{{- end -}}</p></td>
             <td><p>{{ .Importance }}</p></td>
-            <td><p>{{- if .CreatedDate -}}{{ .CreatedDate.Format "2006-01-02" }}{{- end -}}</p></td>
+            <td><p>
+				{{- if .CreatedDate -}}
+					{{ .CreatedDate.Format "2006-01-02" }}
+				{{- end -}}
+			</p></td>
             <td><p>{{- if .Dates.Due -}}{{ .Dates.Due }}{{- end -}}</p></td>
             <td>
 				{{- range .Attachments -}}
-                    {{- if .IsDomain "` + confluenceDomain + `" -}}
+					{{- if .IsDomain "` + confluenceDomain + `" -}}
 						<p><a href="{{ .Url }}" data-card-appearance="inline">{{ .Url }}</a></p>
-                    {{- else -}}
+					{{- else -}}
 						<p><a href="{{ .Url }}">{{ .Name }}</a></p>
 					{{- end -}}
-                {{- end -}}
+				{{- end -}}
 			</td>
         </tr>
         {{- end -}}
