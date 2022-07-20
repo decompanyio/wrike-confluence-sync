@@ -32,6 +32,7 @@ func main() {
 		"https://www.polarissharetech.net",
 		"https://www.figma.com",
 		"https://www.polarisoffice.com",
+		"https://github.com/decompanyio",
 	}
 
 	// 동기화 실행
