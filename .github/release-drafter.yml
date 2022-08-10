@@ -4,7 +4,7 @@ change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
 sort-by: 'title'
 sort-direction: 'ascending'
-commitish: 'prod'
+commitish: 'master'
 filter-by-commitish: true
 template: |
   $CHANGES
