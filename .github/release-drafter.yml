@@ -1,0 +1,48 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&'
+sort-by: 'title'
+sort-direction: 'ascending'
+commitish: 'prod'
+filter-by-commitish: true
+template: |
+  $CHANGES
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+  - title: '⚡️ Improvements'
+    labels:
+      - 'improvement'
+      - 'refactor'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bug'
+  - title: '🌍 SEO'
+    label: 'seo'
+  - title: '🤖 Dependencies'
+    labels:
+      - 'dependencies'
+      - 'security'
+include-labels:
+  - 'feature'
+  - 'improvement'
+  - 'refactor'
+  - 'fix'
+  - 'bug'
+  - 'dependencies'
+  - 'seo'
+  - 'security'
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+  patch:
+    labels:
+      - 'patch'
+  default: patch
