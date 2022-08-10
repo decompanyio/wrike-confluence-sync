@@ -196,6 +196,6 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		}(folder)
 	}
 	wg.Wait()
-
+	fmt.Println("")
 	return sprintWeeklyList
 }
