@@ -85,7 +85,7 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		}
 	}
 	if len(projectD2.Title) == 0 {
-		log.Fatalf("wrike에 [%s] sprint 폴더가 존재하지 않아요\n", spMonth)
+		log.Printf("wrike에 [%s] sprint 폴더가 존재하지 않아요\n", spMonth)
 	}
 
 	// 산출물 도메인 필터
