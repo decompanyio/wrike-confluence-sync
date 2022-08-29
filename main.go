@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"sync"
 	"time"
 	"wrike-confluence-sync/pkg/confluence"
 )
@@ -14,18 +15,6 @@ func main() {
 	// 환경변수 설정
 	configure()
 
-	// 현재 날짜 구하기 (yyyy년 M월)
-	loc, _ := time.LoadLocation("Asia/Seoul")
-	now := time.Now().In(loc).Format("2006년 1월")
-
-	// 클라이언트 생성
-	cfClient = confluence.NewConfluenceClient(
-		CONFLUENCE_DOMAIN,
-		CONFLUENCE_USER,
-		CONFLUENCE_TOKEN,
-		CONFLUENCE_SPACEID,
-	)
-
 	// 매핑할 산출물 도메인 설정
 	outputDomains := []string{
 		CONFLUENCE_DOMAIN,
@@ -35,18 +24,43 @@ func main() {
 		"https://github.com/decompanyio",
 	}
 
-	// 동기화 실행
-	syncConfig := confluence.SyncConfig{
-		SpMonth:          now,
-		SprintRootLink:   WRIKE_SPRINT_ROOT_URL,
-		WrikeBaseUrl:     WRIKE_BASE_URL,
-		WrikeToken:       WRIKE_TOKEN,
-		WrikeSpaceId:     WRIKE_SPACE_ID,
-		AncestorId:       CONFLUENCE_ANCESTOR_ID,
-		OutputDomains:    outputDomains,
-		ConfluenceDomain: CONFLUENCE_DOMAIN,
+	// 클라이언트 생성
+	cfClient = confluence.NewConfluenceClient(
+		CONFLUENCE_DOMAIN,
+		CONFLUENCE_USER,
+		CONFLUENCE_TOKEN,
+		CONFLUENCE_SPACEID,
+	)
+
+	// 현재 날짜 구하기 (yyyy년 M월)
+	loc, _ := time.LoadLocation("Asia/Seoul")
+
+	var wg sync.WaitGroup
+	var spMonths []string
+
+	wg.Add(3)
+	spMonths = append(spMonths, time.Now().In(loc).AddDate(0, -1, 0).Format("2006년 1월")) // 저번달
+	spMonths = append(spMonths, time.Now().In(loc).AddDate(0, 0, 0).Format("2006년 1월"))  // 이번달
+	spMonths = append(spMonths, time.Now().In(loc).AddDate(0, 1, 0).Format("2006년 1월"))  // 다음달
+
+	for _, spMonth := range spMonths {
+		go func(date string) {
+			// 동기화 실행
+			syncConfig := confluence.SyncConfig{
+				SpMonth:          date,
+				SprintRootLink:   WRIKE_SPRINT_ROOT_URL,
+				WrikeBaseUrl:     WRIKE_BASE_URL,
+				WrikeToken:       WRIKE_TOKEN,
+				WrikeSpaceId:     WRIKE_SPACE_ID,
+				AncestorId:       CONFLUENCE_ANCESTOR_ID,
+				OutputDomains:    outputDomains,
+				ConfluenceDomain: CONFLUENCE_DOMAIN,
+			}
+			cfClient.SyncContent(syncConfig)
+			wg.Done()
+		}(spMonth)
 	}
-	cfClient.SyncContent(syncConfig)
+	wg.Wait()
 }
 
 var (
