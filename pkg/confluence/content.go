@@ -119,5 +119,4 @@ func (c *Client) SyncContent(syncConfig SyncConfig) {
 		}(weekly)
 	}
 	wg.Wait()
-	fmt.Println("Done")
 }
