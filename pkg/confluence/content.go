@@ -68,7 +68,7 @@ func (c *Client) NewContent(ancestorId string, title string, body string, conten
 	return contentResult
 }
 
-func (c *Client) SyncContent(syncConfig SyncConfig) {
+func (c *Client) SyncContent(syncConfig SyncConfig) error {
 	// Root 페이지 하위에 이미 sprint 페이지가 있는지 조회, 없으면 생성
 	// 페이지명: yyyy년 MM월 Sprint
 	// parentId 페이지 하위에 동기화
@@ -88,10 +88,13 @@ func (c *Client) SyncContent(syncConfig SyncConfig) {
 		syncConfig.WrikeToken,
 		syncConfig.WrikeSpaceId,
 		nil)
-	sprintWeekly := wrikeAPI.Sprints(syncConfig.SpMonth,
+	sprintWeekly, err := wrikeAPI.Sprints(syncConfig.SpMonth,
 		syncConfig.SprintRootLink,
 		syncConfig.OutputDomains)
 
+	if err != nil {
+		return err
+	}
 	// 각 주차마다 비동기로 빠르게 처리
 	var wg sync.WaitGroup
 	wg.Add(len(sprintWeekly))
@@ -119,4 +122,5 @@ func (c *Client) SyncContent(syncConfig SyncConfig) {
 		}(weekly)
 	}
 	wg.Wait()
+	return nil
 }

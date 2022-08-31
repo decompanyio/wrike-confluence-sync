@@ -1,6 +1,7 @@
 package wrike
 
 import (
+	"errors"
 	"fmt"
 	"github.com/cloudflare/ahocorasick"
 	"log"
@@ -65,7 +66,7 @@ func (sw *SprintWeekly) analyzeImportance() {
 
 // Sprints 스프린트 조회 - 스프린트 이름으로 필터
 // @Param 예시: "2022.03.SP1"
-func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []string) []SprintWeekly {
+func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []string) ([]SprintWeekly, error) {
 	// wrike 스프린트 루트 폴더 (Sprint)
 	rootProject := w.ProjectsByLink(sprintRootLink, nil)
 
@@ -85,7 +86,9 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		}
 	}
 	if len(projectD2.Title) == 0 {
-		log.Printf("wrike에 [%s] sprint 폴더가 존재하지 않아요\n", spMonth)
+		msg := fmt.Sprintf("wrike에 [%s] sprint 폴더가 존재하지 않아요\n", spMonth)
+		log.Printf(msg)
+		return nil, errors.New(msg)
 	}
 
 	// 산출물 도메인 필터
@@ -196,6 +199,5 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		}(folder)
 	}
 	wg.Wait()
-	fmt.Println("")
-	return sprintWeeklyList
+	return sprintWeeklyList, nil
 }

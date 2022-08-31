@@ -6,7 +6,7 @@ require (
 	github.com/cloudflare/ahocorasick v0.0.0-20210425175752-730270c3e184
 	github.com/joho/godotenv v1.4.0
 	github.com/stretchr/testify v1.8.0
-	github.com/virtomize/confluence-go-api v1.4.0
+	github.com/virtomize/confluence-go-api v1.4.1
 )
 
 require (
