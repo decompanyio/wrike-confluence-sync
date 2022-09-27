@@ -66,7 +66,7 @@ func TestProjectsByLink(t *testing.T) {
 
 // ID로 프로젝트 조회
 func TestProjectsByIds(t *testing.T) {
-	projects := wrikeClient.ProjectsByLink("https://www.wrike.com/open.htm?id=897180682", nil)
+	projects := wrikeClient.ProjectsByLink("https://www.wrike.com/open.htm?id=850512856", nil)
 	projectsSearch := wrikeClient.ProjectsByIds(projects.Data[0].ChildIds)
 	fmt.Println(len(projectsSearch.Data))
 	fmt.Printf("%+v\n", projectsSearch.Data)
@@ -75,9 +75,17 @@ func TestProjectsByIds(t *testing.T) {
 
 // "2022.03.SP1"로 특정 스프린트 하위 폴더 조회
 func TestSprints(t *testing.T) {
-	sprintWeekly := wrikeClient.Sprints("2022년 5월", "https://app-us2.wrike.com/open.htm?id=850512856", outputDomains)
-	//sprintWeekly := wrikeClient.Sprints("2022년 3월", "https://www.wrike.com/open.htm?id=865199939")
+	outputDomains := []string{
+		os.Getenv("CONFLUENCE_DOMAIN"),
+		"https://www.polarissharetech.net",
+		"https://www.figma.com",
+		"https://www.polarisoffice.com",
+		"https://github.com/decompanyio",
+	}
 
+	sprintWeekly, err := wrikeClient.Sprints("2022년 9월", "https://app-us2.wrike.com/open.htm?id=850512856", outputDomains)
+
+	assert.Equal(t, err, nil)
 	fmt.Println(len(sprintWeekly))
 	for _, v := range sprintWeekly {
 		fmt.Println(prettyPrint(v.ImportanceStatistics["Normal"]))
