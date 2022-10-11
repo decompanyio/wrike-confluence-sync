@@ -48,6 +48,7 @@ func main() {
 
 	for _, spMonth := range spMonths {
 		go func(date string) {
+			defer wg.Done()
 			// 동기화 실행
 			syncConfig := confluence.SyncConfig{
 				SpMonth:          date,
@@ -60,7 +61,6 @@ func main() {
 				ConfluenceDomain: CONFLUENCE_DOMAIN,
 			}
 			cfClient.SyncContent(syncConfig)
-			wg.Done()
 		}(spMonth)
 	}
 	wg.Wait()

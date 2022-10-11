@@ -101,6 +101,8 @@ func (c *Client) SyncContent(syncConfig SyncConfig) error {
 
 	for _, weekly := range sprintWeekly {
 		go func(weekly wrike.SprintWeekly) {
+			defer wg.Done()
+
 			var content *goconfluence.Content
 			title := weekly.Title
 			body := NewTemplate(weekly, syncConfig.ConfluenceDomain)
@@ -118,7 +120,6 @@ func (c *Client) SyncContent(syncConfig SyncConfig) error {
 			content = &goconfluence.Content{}
 			content = c.NewContent(parentId, title, body, *contentSearch)
 			fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", weekly.Title, content.Links.Base+content.Links.TinyUI)
-			wg.Done()
 		}(weekly)
 	}
 	wg.Wait()

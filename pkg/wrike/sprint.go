@@ -157,6 +157,8 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 	for _, folder := range projectsD3.Data {
 		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", folder.Title)
 		go func(p Project) {
+			defer wg.Done()
+
 			// 팀원 별 폴더 조회 - 2022.04.SP1.anthony
 			foldersPerMember := folderAll.findFolderByIds(p.ChildIds)
 
@@ -169,6 +171,8 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 			var sprints []Sprint
 			for _, pMember := range foldersPerMember {
 				go func(pMember Project) {
+					defer wgChild.Done()
+
 					authorName := strings.Split(pMember.Title, ".")[3]
 					mutexChild.Lock()
 					sprints = append(sprints, Sprint{
@@ -177,7 +181,6 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 						SprintGoal: pMember.Description,
 					})
 					mutexChild.Unlock()
-					wgChild.Done()
 				}(pMember)
 			}
 			wgChild.Wait()
@@ -195,7 +198,6 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 			sprintWeekly.analyzeImportance()
 			sprintWeeklyList = append(sprintWeeklyList, sprintWeekly)
 			mutex.Unlock()
-			wg.Done()
 		}(folder)
 	}
 	wg.Wait()
