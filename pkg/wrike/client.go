@@ -2,6 +2,7 @@ package wrike
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -17,12 +18,14 @@ type Client struct {
 }
 
 // NewWrikeClient 생성자
-func NewWrikeClient(host string, bearer string, spaceId string, httpClient *http.Client) *Client {
+func NewWrikeClient(host string, bearer string, spaceId string, httpClient *http.Client) (*Client, error) {
 	hostValid, err := url.ParseRequestURI(host)
-	errorHandler(err)
+	if err != nil {
+		return nil, errors.New("failed to create wrike client")
+	}
 
 	if len(bearer) == 0 {
-		log.Fatal("토큰이 없습니다.")
+		return nil, errors.New("failed to create wrike client")
 	}
 
 	if httpClient == nil {
@@ -36,7 +39,7 @@ func NewWrikeClient(host string, bearer string, spaceId string, httpClient *http
 		bearer:     bearer,
 		spaceId:    spaceId,
 		httpClient: httpClient,
-	}
+	}, nil
 }
 
 // API 공통 모듈 (internal)

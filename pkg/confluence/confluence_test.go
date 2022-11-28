@@ -17,17 +17,17 @@ const sprintRootLink = "https://app-us2.wrike.com/open.htm?id=850512856"
 func init() {
 	godotenv.Load()
 	cf = NewConfluenceClient(
-		os.Getenv("DOMAIN"),
-		os.Getenv("USER"),
-		os.Getenv("TOKEN"),
-		os.Getenv("SPACEID"),
+		os.Getenv("CONFLUENCE_DOMAIN"),
+		os.Getenv("CONFLUENCE_USER"),
+		os.Getenv("CONFLUENCE_TOKEN"),
+		os.Getenv("CONFLUENCE_SPACEID"),
 	)
 }
 
 // 스페이스 리스트 조회
 func TestSpace(t *testing.T) {
 	spaces, err := cf.Client.GetAllSpaces(goconfluence.AllSpacesQuery{})
-	errHandler(err)
+	assert.NoError(t, err)
 
 	for i, space := range spaces.Results {
 		fmt.Printf("%d번째 : %s\n", i, space.Name)
@@ -44,7 +44,8 @@ func TestNewTemplate(t *testing.T) {
 		os.Getenv("WRIKE_TOKEN"),
 		os.Getenv("WRIKE_SPACE_ID"),
 		nil)
-	sprintWeekly := wrikeAPI.Sprints("2022년 04월", sprintRootLink, []string{"https://google.com"})
+	sprintWeekly, err := wrikeAPI.Sprints("2022년 04월", sprintRootLink, []string{"https://google.com"})
+	assert.NoError(t, err)
 
 	for _, weekly := range sprintWeekly {
 		data := NewTemplate(weekly.Sprints, os.Getenv("DOMAIN"))

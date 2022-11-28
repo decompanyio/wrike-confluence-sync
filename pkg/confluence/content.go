@@ -10,9 +10,6 @@ import (
 type SyncConfig struct {
 	SpMonth          string
 	SprintRootLink   string
-	WrikeBaseUrl     string
-	WrikeToken       string
-	WrikeSpaceId     string
 	AncestorId       string
 	OutputDomains    []string
 	ConfluenceDomain string
@@ -46,7 +43,7 @@ func (c *Client) NewContent(ancestorId string, title string, body string, conten
 				ID: ancestorId,
 			},
 		},
-		Space: goconfluence.Space{Key: c.spaceId},
+		Space: &goconfluence.Space{Key: c.spaceId},
 	}
 
 	// 컨플 페이지 등록 또는 수정
@@ -68,7 +65,7 @@ func (c *Client) NewContent(ancestorId string, title string, body string, conten
 	return contentResult
 }
 
-func (c *Client) SyncContent(syncConfig SyncConfig) error {
+func (c *Client) SyncContent(syncConfig SyncConfig, wrikeClient *wrike.Client) error {
 	// Root 페이지 하위에 이미 sprint 페이지가 있는지 조회, 없으면 생성
 	// 페이지명: yyyy년 MM월 Sprint
 	// parentId 페이지 하위에 동기화
@@ -82,13 +79,8 @@ func (c *Client) SyncContent(syncConfig SyncConfig) error {
 		parentId = parentContentNew.ID
 	}
 
-	// wrike 데이터 조회
-	wrikeAPI := wrike.NewWrikeClient(
-		syncConfig.WrikeBaseUrl,
-		syncConfig.WrikeToken,
-		syncConfig.WrikeSpaceId,
-		nil)
-	sprintWeekly, err := wrikeAPI.Sprints(syncConfig.SpMonth,
+	sprintWeekly, err := wrikeClient.Sprints(
+		syncConfig.SpMonth,
 		syncConfig.SprintRootLink,
 		syncConfig.OutputDomains)
 
