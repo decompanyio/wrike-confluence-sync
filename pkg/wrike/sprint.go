@@ -63,7 +63,7 @@ func (sw *SprintWeekly) analyzeImportance() {
 }
 
 // Sprints 스프린트 데이터 조회
-func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []string) ([]SprintWeekly, error) {
+func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []string) ([]*SprintWeekly, error) {
 	rootProject := w.ProjectsByLink(sprintRootLink, nil)
 
 	// API 호출 제한 때문에 전체를 가져와서 필터링
@@ -132,7 +132,7 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 	// 해당 월의 각 sprint 회차 폴더를 조회한다 (ex. "2022.11.SP1")
 	projectsD3 := w.ProjectsByIds(monthProject.ChildIds)
 
-	var sprintWeeklyList []SprintWeekly
+	var sprintWeeklyList []*SprintWeekly
 
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
@@ -183,7 +183,7 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 				ImportanceStatistics: map[string]*ImportanceStatistic{},
 			}
 			sprintWeekly.analyzeImportance()
-			sprintWeeklyList = append(sprintWeeklyList, sprintWeekly)
+			sprintWeeklyList = append(sprintWeeklyList, &sprintWeekly)
 		}(folder)
 	}
 	wg.Wait()

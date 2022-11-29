@@ -16,7 +16,7 @@ type SyncConfig struct {
 }
 
 // checkContentExist 컨플 페이지가 존재하는지 확인한다
-func (c *Client) checkContentExist(title string) (bool, goconfluence.ContentSearch) {
+func (c *Client) checkContentExist(title string) (bool, *goconfluence.ContentSearch) {
 	contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
 		Title:    title,
 		Type:     "page",
@@ -25,7 +25,7 @@ func (c *Client) checkContentExist(title string) (bool, goconfluence.ContentSear
 	})
 	errHandler(err)
 
-	return contentSearch.Size > 0, *contentSearch
+	return contentSearch.Size > 0, contentSearch
 }
 
 // NewContent 컨플 페이지를 생성한다
@@ -34,7 +34,7 @@ func (c *Client) checkContentExist(title string) (bool, goconfluence.ContentSear
 // @param title 컨플 페이지 제목
 // @param body 컨플 본문
 // @param contentSearch 해당 페이지가 존재하는지에 대한 검색 결과
-func (c *Client) NewContent(ancestorId string, title string, body string, contentSearch goconfluence.ContentSearch) *goconfluence.Content {
+func (c *Client) NewContent(ancestorId string, title string, body string, contentSearch *goconfluence.ContentSearch) *goconfluence.Content {
 	// 컨플 컨텐트 구조체 생성
 	content := &goconfluence.Content{
 		Title: title,
@@ -97,7 +97,7 @@ func (c *Client) SyncContent(syncConfig SyncConfig, wrikeClient *wrike.Client) e
 	wg.Add(len(sprintWeekly))
 
 	for _, weekly := range sprintWeekly {
-		go func(weekly wrike.SprintWeekly) {
+		go func(weekly *wrike.SprintWeekly) {
 			defer wg.Done()
 
 			title := weekly.Title
@@ -113,7 +113,7 @@ func (c *Client) SyncContent(syncConfig SyncConfig, wrikeClient *wrike.Client) e
 			errHandler(errChild)
 
 			// 페이지 생성/수정
-			content := c.NewContent(parentId, title, body, *contentSearch)
+			content := c.NewContent(parentId, title, body, contentSearch)
 			fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", weekly.Title, content.Links.Base+content.Links.TinyUI)
 		}(weekly)
 	}
