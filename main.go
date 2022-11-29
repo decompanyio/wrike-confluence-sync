@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -27,7 +28,7 @@ func main() {
 		os.Getenv("CONFLUENCE_SPACEID"),
 	)
 	if err != nil {
-		log.Fatalln("failed to create confluence client")
+		log.Fatalln("failed to create confluence client:", err.Error())
 	}
 
 	wrikeClient, err := wrike.NewWrikeClient(
@@ -37,7 +38,7 @@ func main() {
 		nil,
 	)
 	if err != nil {
-		log.Fatalln("failed to create confluence client")
+		log.Fatal(err.Error())
 	}
 
 	// 현재 날짜 구하기 (yyyy년 M월)
@@ -65,7 +66,10 @@ func main() {
 				OutputDomains:    outputDomains,
 				ConfluenceDomain: os.Getenv("CONFLUENCE_DOMAIN"),
 			}
-			cfClient.SyncContent(syncConfig, wrikeClient)
+			errSync := cfClient.SyncContent(syncConfig, wrikeClient)
+			if errSync != nil {
+				fmt.Println(errSync.Error())
+			}
 		}(spMonth)
 	}
 	wg.Wait()
