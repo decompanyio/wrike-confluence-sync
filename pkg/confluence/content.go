@@ -2,8 +2,10 @@ package confluence
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	goconfluence "github.com/virtomize/confluence-go-api"
 	"sync"
+	"time"
 	"wrike-confluence-sync/pkg/wrike"
 )
 
@@ -84,19 +86,21 @@ func (c *Client) SyncContent(syncConfig SyncConfig, wrikeClient *wrike.Client) e
 		parentId = parentContentNew.ID
 	}
 
-	sprintWeekly, err := wrikeClient.Sprints(
+	sprintWeekly, errWrike := wrikeClient.Sprints(
 		syncConfig.SpMonth,
 		syncConfig.SprintRootLink,
 		syncConfig.OutputDomains)
 
-	if err != nil {
-		return err
+	if errWrike != nil {
+		return errWrike
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(len(sprintWeekly))
+	done := make(chan string)
+	errCh := make(chan error)
 
 	for _, weekly := range sprintWeekly {
+		wg.Add(1)
 		go func(weekly *wrike.SprintWeekly) {
 			defer wg.Done()
 
@@ -104,19 +108,37 @@ func (c *Client) SyncContent(syncConfig SyncConfig, wrikeClient *wrike.Client) e
 			body := NewTemplate(weekly, syncConfig.ConfluenceDomain)
 
 			// 이미 존재하는 페이지인지 확인
-			contentSearch, errChild := c.Client.GetContent(goconfluence.ContentQuery{
+			contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
 				Title:    title,
 				Type:     "page",
 				Expand:   []string{"version"},
 				SpaceKey: c.spaceId,
 			})
-			errHandler(errChild)
+			if err != nil {
+				errCh <- err
+				return
+			}
 
 			// 페이지 생성/수정
 			content := c.NewContent(parentId, title, body, contentSearch)
-			fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", weekly.Title, content.Links.Base+content.Links.TinyUI)
+			done <- fmt.Sprintf("동기화된 컨플 페이지 링크 ==> %s (%s)", weekly.Title, content.Links.Base+content.Links.TinyUI)
 		}(weekly)
 	}
-	wg.Wait()
+
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	for i := 0; i < len(sprintWeekly); i++ {
+		select {
+		case result := <-done:
+			fmt.Println(result)
+		case e := <-errCh:
+			log.Error().Caller().Err(e).Msg("")
+		case <-time.After(10 * time.Second):
+			log.Error().Caller().Msg("[wrike] confluenceapi timeout for 10s")
+		}
+	}
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cloudflare/ahocorasick"
+	"github.com/rs/zerolog/log"
 	"sort"
 	"strings"
 	"sync"
@@ -132,14 +133,15 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 	// 해당 월의 각 sprint 회차 폴더를 조회한다 (ex. "2022.11.SP1")
 	projectsD3 := w.ProjectsByIds(monthProject.ChildIds)
 
-	var sprintWeeklyList []*SprintWeekly
-
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
-	wg.Add(len(projectsD3.Data))
+	done := make(chan struct{})
 
+	var sprintWeeklyList []*SprintWeekly
 	// sprint 데이터를 가공한다
 	for _, folder := range projectsD3.Data {
+		wg.Add(1)
+
 		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", folder.Title)
 		go func(p Project) {
 			defer wg.Done()
@@ -147,28 +149,43 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 			// 팀원 별 폴더 조회 - 2022.04.SP1.anthony
 			foldersPerMember := folderAll.findFolderByIds(p.ChildIds)
 
+			doneChild := make(chan struct{})
 			var wgChild sync.WaitGroup
 			var mutexChild sync.Mutex
-			wgChild.Add(len(foldersPerMember))
 
 			// 팀원 별 프로젝트 하위 작업 조회
 			var sprints []Sprint
 			for _, pMember := range foldersPerMember {
+				wgChild.Add(1)
 				go func(pMember Project) {
 					defer wgChild.Done()
-					mutexChild.Lock()
-					defer mutexChild.Unlock()
 
 					authorName := strings.Split(pMember.Title, ".")[3]
 
+					mutexChild.Lock()
 					sprints = append(sprints, Sprint{
 						AuthorName: authorName,
 						Tasks:      findTaskByIds(pMember.ID, authorName),
 						SprintGoal: pMember.Description,
 					})
+					mutexChild.Unlock()
+
+					doneChild <- struct{}{}
 				}(pMember)
 			}
-			wgChild.Wait()
+
+			go func() {
+				wgChild.Wait()
+				close(doneChild)
+			}()
+
+			for i := 0; i < len(foldersPerMember); i++ {
+				select {
+				case <-doneChild:
+				case <-time.After(10 * time.Second):
+					log.Error().Caller().Msg("[wrike] spring api timeout for 5s")
+				}
+			}
 
 			// 이름 순으로 정렬
 			sort.Slice(sprints, func(i, j int) bool { return sprints[i].AuthorName < sprints[j].AuthorName })
@@ -184,9 +201,23 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 			}
 			sprintWeekly.analyzeImportance()
 			sprintWeeklyList = append(sprintWeeklyList, &sprintWeekly)
+			done <- struct{}{}
 		}(folder)
 	}
-	wg.Wait()
+
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	for i := 0; i < len(projectsD3.Data); i++ {
+		select {
+		case <-done:
+		case <-time.After(10 * time.Second):
+			log.Error().Caller().Msg("[wrike] spring api timeout for 5s")
+		}
+	}
+
 	return sprintWeeklyList, nil
 }
 

@@ -23,9 +23,7 @@ type Attachment struct {
 	Url         string    `json:"url,omitempty"`
 }
 
-type AllAttachmentMap map[string][]Attachment
-
-// AttachmentAll 모든 첨부파일 조회 후 parentId를 키인 map 반환
+// AttachmentAll 모든 첨부파일 조회 후 parentId가 키인 map 반환
 func (w *Client) AttachmentAll() AllAttachmentMap {
 	urlQuery := map[string]string{
 		"withUrls": `true`,
@@ -44,6 +42,8 @@ func (w *Client) AttachmentAll() AllAttachmentMap {
 func (a *Attachment) IsDomain(domain string) bool {
 	return strings.Index(a.Url, domain) > -1
 }
+
+type AllAttachmentMap map[string][]Attachment
 
 func (aam *AllAttachmentMap) findByTaskId(taskId string) []Attachment {
 	return (*aam)[taskId]
