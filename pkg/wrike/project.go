@@ -39,12 +39,13 @@ func (afm *AllFolderMap) findFolderByIds(folderIds []string) []Project {
 
 // FolderAll 모든 폴더 조회(프로젝트 제외) 후 folderId가 키인 map 반환
 func (w *Client) FolderAll() AllFolderMap {
-	var folders Projects
 	urlQuery := map[string]string{
 		"deleted": "false",
 		"project": "false",
 		"fields":  `["description"]`,
 	}
+
+	var folders Projects
 	w.newAPI("/spaces/"+w.spaceId+"/folders", urlQuery, &folders)
 
 	allFolderMap := AllFolderMap{}

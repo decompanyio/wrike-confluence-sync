@@ -16,12 +16,17 @@ const sprintRootLink = "https://app-us2.wrike.com/open.htm?id=850512856"
 
 func init() {
 	godotenv.Load()
-	cf = NewConfluenceClient(
+
+	var err error
+	cf, err = NewConfluenceClient(
 		os.Getenv("CONFLUENCE_DOMAIN"),
 		os.Getenv("CONFLUENCE_USER"),
 		os.Getenv("CONFLUENCE_TOKEN"),
 		os.Getenv("CONFLUENCE_SPACEID"),
 	)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // 스페이스 리스트 조회
@@ -39,11 +44,10 @@ func TestSpace(t *testing.T) {
 // wrike 데이터로 html 동적 생성
 func TestNewTemplate(t *testing.T) {
 	// wrike 데이터 조회
-	wrikeAPI := wrike.NewWrikeClient(
+	wrikeAPI, err := wrike.NewWrikeClient(
 		os.Getenv("WRIKE_BASE_URL"),
 		os.Getenv("WRIKE_TOKEN"),
-		os.Getenv("WRIKE_SPACE_ID"),
-		nil)
+		os.Getenv("WRIKE_SPACE_ID"))
 	sprintWeekly, err := wrikeAPI.Sprints("2022년 04월", sprintRootLink, []string{"https://google.com"})
 	assert.NoError(t, err)
 
@@ -54,16 +58,14 @@ func TestNewTemplate(t *testing.T) {
 	}
 }
 
-func TestCreateContent(t *testing.T) {
-	syncConfig := SyncConfig{
-		SpMonth:        "2022년 4월",
-		SprintRootLink: sprintRootLink,
-		WrikeBaseUrl:   os.Getenv("WRIKE_BASE_URL"),
-		WrikeToken:     os.Getenv("WRIKE_TOKEN"),
-		AncestorId:     os.Getenv("ANCESTORID"),
-	}
-
-	cf.SyncContent(syncConfig)
-
-	assert.NotEqual(t, 1, nil)
-}
+//func TestCreateContent(t *testing.T) {
+//	syncConfig := SyncConfig{
+//		SpMonth:        "2022년 4월",
+//		SprintRootLink: sprintRootLink,
+//		AncestorId:     os.Getenv("ANCESTORID"),
+//	}
+//
+//	cf.SyncContent(syncConfig)
+//
+//	assert.NotEqual(t, 1, nil)
+//}

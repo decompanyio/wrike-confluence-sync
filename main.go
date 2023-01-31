@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 	"sync"
 	"time"
@@ -28,17 +27,18 @@ func main() {
 		os.Getenv("CONFLUENCE_SPACEID"),
 	)
 	if err != nil {
-		log.Fatalln("failed to create confluence client:", err.Error())
+		log.Err(err).Msg("failed to create confluence client:")
+		return
 	}
 
 	wrikeClient, err := wrike.NewWrikeClient(
 		os.Getenv("WRIKE_BASE_URL"),
 		os.Getenv("WRIKE_TOKEN"),
 		os.Getenv("WRIKE_SPACE_ID"),
-		nil,
 	)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Err(err).Msg("failed to create wrike client:")
+		return
 	}
 
 	// 현재 날짜 구하기 (yyyy년 M월)
@@ -48,14 +48,16 @@ func main() {
 	now = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 
 	var wg sync.WaitGroup
+	done := make(chan struct{})
+	errCh := make(chan error)
 	var spMonths []string
 
-	wg.Add(3)
 	spMonths = append(spMonths, now.In(loc).AddDate(0, -1, 0).Format("2006년 1월")) // 저번달
 	spMonths = append(spMonths, now.In(loc).AddDate(0, 0, 0).Format("2006년 1월"))  // 이번달
 	spMonths = append(spMonths, now.In(loc).AddDate(0, 1, 0).Format("2006년 1월"))  // 다음달
 
 	for _, spMonth := range spMonths {
+		wg.Add(1)
 		go func(date string) {
 			defer wg.Done()
 			// 동기화 실행
@@ -68,9 +70,25 @@ func main() {
 			}
 			errSync := cfClient.SyncContent(syncConfig, wrikeClient)
 			if errSync != nil {
-				fmt.Println(errSync.Error())
+				errCh <- errSync
+				return
 			}
+			done <- struct{}{}
 		}(spMonth)
 	}
-	wg.Wait()
+
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	for i := 0; i < len(spMonths); i++ {
+		select {
+		case <-done:
+		case e := <-errCh:
+			log.Error().Err(e).Msg("")
+		case <-time.After(30 * time.Second):
+			log.Error().Msg("Root goroutine timeout for 30s")
+		}
+	}
 }
