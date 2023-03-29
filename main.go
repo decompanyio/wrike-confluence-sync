@@ -50,25 +50,36 @@ func main() {
 	var wg sync.WaitGroup
 	done := make(chan struct{})
 	errCh := make(chan error)
-	var spMonths []string
 
-	spMonths = append(spMonths, now.In(loc).AddDate(0, -1, 0).Format("2006년 1월")) // 저번달
-	spMonths = append(spMonths, now.In(loc).AddDate(0, 0, 0).Format("2006년 1월"))  // 이번달
-	spMonths = append(spMonths, now.In(loc).AddDate(0, 1, 0).Format("2006년 1월"))  // 다음달
+	var spMonths []time.Time
+	spMonths = append(spMonths, now.In(loc).AddDate(0, -1, 0)) // 저번달
+	spMonths = append(spMonths, now.In(loc).AddDate(0, 0, 0))  // 이번달
+	spMonths = append(spMonths, now.In(loc).AddDate(0, 1, 0))  // 다음달
+
+	data := wrike.AllData{
+		UserAll:       wrikeClient.UserAll(),
+		AttachmentAll: wrikeClient.AttachmentAll(),
+		ProjectAll:    wrikeClient.ProjectAll(),
+	}
 
 	for _, spMonth := range spMonths {
 		wg.Add(1)
-		go func(date string) {
+		go func(date time.Time) {
 			defer wg.Done()
 			// 동기화 실행
+			sprint, errChild := wrikeClient.Sprint(date, os.Getenv("WRIKE_SPRINT_ROOT_URL"), outputDomains, data)
+			if errChild != nil {
+				errCh <- errChild
+				return
+			}
+
 			syncConfig := confluence.SyncConfig{
-				SpMonth:          date,
-				SprintRootLink:   os.Getenv("WRIKE_SPRINT_ROOT_URL"),
+				Date:             date,
 				AncestorId:       os.Getenv("CONFLUENCE_ANCESTOR_ID"),
 				OutputDomains:    outputDomains,
 				ConfluenceDomain: os.Getenv("CONFLUENCE_DOMAIN"),
 			}
-			errSync := cfClient.SyncContent(syncConfig, wrikeClient)
+			errSync := cfClient.SyncContent(sprint, syncConfig)
 			if errSync != nil {
 				errCh <- errSync
 				return

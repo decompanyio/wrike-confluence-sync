@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"time"
 )
 
 var (
@@ -39,7 +40,7 @@ func TestUsers(t *testing.T) {
 
 // 모든 폴더 조회
 func TestFoldersAll(t *testing.T) {
-	folders := wrikeClient.FolderAll()
+	folders := wrikeClient.ProjectAll()
 
 	fmt.Println(prettyPrint(folders))
 	assert.Greater(t, len(folders), 0)
@@ -81,18 +82,29 @@ func TestProjectsByIds(t *testing.T) {
 
 // "2022.03.SP1"로 특정 스프린트 하위 폴더 조회
 func TestSprints(t *testing.T) {
-	sprintWeekly, err := wrikeClient.Sprints("2022년 9월", "https://app-us2.wrike.com/open.htm?id=850512856", outputDomains)
+	rootLink := "https://app-us2.wrike.com/open.htm?id=1084138983"
 
-	assert.Equal(t, err, nil)
-	fmt.Println(len(sprintWeekly))
-	for _, v := range sprintWeekly {
-		fmt.Println(prettyPrint(v.ImportanceStatistics["Normal"]))
+	data := AllData{
+		UserAll:       wrikeClient.UserAll(),
+		AttachmentAll: wrikeClient.AttachmentAll(),
+		ProjectAll:    wrikeClient.ProjectAll(),
 	}
 
-	assert.Greater(t, len(sprintWeekly), 0)
+	date := time.Date(2023, 4, 1, 0, 0, 0, 0, time.UTC)
+	sprint, err := wrikeClient.Sprint(date, rootLink, outputDomains, data)
+	assert.NoError(t, err)
+	assert.NotNil(t, sprint)
+
+	fmt.Println(sprint)
 }
 
 func prettyPrint(i interface{}) string {
 	s, _ := json.MarshalIndent(i, "", "\t")
 	return string(s)
+}
+
+func TestProjectsByLinkV2(t *testing.T) {
+	projects := wrikeClient.ProjectsByLink("https://app-us2.wrike.com/open.htm?id=1084138983", nil)
+	println(prettyPrint(projects))
+	assert.Greater(t, len(projects.Data), 0)
 }
