@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// escapeSpecialHTML 특수 문자 변환
 func escapeSpecialHTML(str string) string {
 	str = strings.Replace(str, `&lt;`, `<`, -1)
 	str = strings.Replace(str, `&gt;`, `>`, -1)
@@ -13,7 +14,7 @@ func escapeSpecialHTML(str string) string {
 	return str
 }
 
-// NewTemplate wrike 스프린트 데이터로 컨플 페이지의 소스 html 파일을 생성한다
+// NewTemplate 템플릿 생성
 func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	html := `<ac:structured-macro ac:name="toc" ac:schema-version="1" data-layout="default"><ac:parameter ac:name="minLevel">1</ac:parameter><ac:parameter ac:name="maxLevel">7</ac:parameter><ac:parameter ac:name="type">flat</ac:parameter></ac:structured-macro>
 

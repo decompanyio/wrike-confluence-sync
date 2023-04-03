@@ -54,11 +54,13 @@ func (c *Client) NewContent(ancestorId string, title string, body string, conten
 
 	var contentResult *goconfluence.Content
 	var err error
+
+	// 컨플 페이지가 존재하는 경우 업데이트, 없는 경우 생성
 	if contentSearch.Size > 0 {
 		content.ID = contentSearch.Results[0].ID
 		content.Version = &goconfluence.Version{
-			Number:    contentSearch.Results[0].Version.Number + 1,
-			MinorEdit: true, // 관찰자에게 알리지 않음
+			Number:    contentSearch.Results[0].Version.Number + 1, // 버전 증가
+			MinorEdit: true,                                        // 관찰자에게 알리지 않음
 		}
 
 		contentResult, err = c.Client.UpdateContent(content)
@@ -79,7 +81,7 @@ func (c *Client) SyncContent(sprint wrike.SprintWeekly, syncConfig SyncConfig) e
 	var parentId string
 
 	// 부모 컨플 페이지가 존재하는지 확인
-	// 존재하지 않으면 생성
+	// 존재하지 않는 경우 생성
 	isExist, parentContent := c.checkContentExist(searchTitle)
 	if isExist {
 		parentId = parentContent.Results[0].ID
@@ -88,7 +90,7 @@ func (c *Client) SyncContent(sprint wrike.SprintWeekly, syncConfig SyncConfig) e
 		parentId = parentContentNew.ID
 	}
 
-	// 이미 존재하는 페이지인지 확인
+	// 컨플 페이지가 존재하는지 확인
 	contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
 		Title:    sprint.Title,
 		Type:     "page",
@@ -100,10 +102,9 @@ func (c *Client) SyncContent(sprint wrike.SprintWeekly, syncConfig SyncConfig) e
 		return err
 	}
 
-	// 페이지 생성/수정
+	// 컨플 페이지 생성
 	body := NewTemplate(sprint, syncConfig.ConfluenceDomain)
 	content := c.NewContent(parentId, sprint.Title, body, contentSearch)
-	fmt.Println(body)
 	fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", sprint.Title, content.Links.Base+content.Links.TinyUI)
 	return nil
 }

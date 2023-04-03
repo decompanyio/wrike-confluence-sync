@@ -97,7 +97,7 @@ func main() {
 		select {
 		case <-done:
 		case e := <-errCh:
-			log.Error().Err(e).Msg("")
+			log.Err(e).Msg("error occurred")
 		case <-time.After(30 * time.Second):
 			log.Error().Msg("Root goroutine timeout for 30s")
 		}
