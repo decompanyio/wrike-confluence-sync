@@ -27,28 +27,29 @@ type Project struct {
 	} `json:"project,omitempty"`
 }
 
-type AllFolderMap map[string]Project
+type AllProjectMap map[string]Project
 
-func (afm *AllFolderMap) findFolderByIds(folderIds []string) []Project {
+// FindProjectsByIDs projectIDs 해당하는 프로젝트 반환
+func (afm *AllProjectMap) FindProjectsByIDs(projectIDs []string) []Project {
 	var projectTemp []Project
-	for _, id := range folderIds {
+	for _, id := range projectIDs {
 		projectTemp = append(projectTemp, (*afm)[id])
 	}
 	return projectTemp
 }
 
-// FolderAll 모든 폴더 조회(프로젝트 제외) 후 folderId가 키인 map 반환
-func (w *Client) FolderAll() AllFolderMap {
+// ProjectAll 모든 폴더 조회(프로젝트 제외) 후 folderId가 키인 map 반환
+func (w *Client) ProjectAll() AllProjectMap {
 	urlQuery := map[string]string{
 		"deleted": "false",
-		"project": "false",
+		"project": "true",
 		"fields":  `["description"]`,
 	}
 
 	var folders Projects
 	w.newAPI("/spaces/"+w.spaceId+"/folders", urlQuery, &folders)
 
-	allFolderMap := AllFolderMap{}
+	allFolderMap := AllProjectMap{}
 	for _, folder := range folders.Data {
 		allFolderMap[folder.ID] = folder
 	}

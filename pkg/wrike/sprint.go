@@ -1,7 +1,6 @@
 package wrike
 
 import (
-	"errors"
 	"fmt"
 	"github.com/cloudflare/ahocorasick"
 	"github.com/rs/zerolog/log"
@@ -32,7 +31,7 @@ type ImportanceStatistic struct {
 }
 
 // analyzeImportance 스프린트 데이터의 중요도 별 진행률 분석
-func (sw *SprintWeekly) analyzeImportance() {
+func (sw *SprintWeekly) analyzeImportance() SprintWeekly {
 	sw.ImportanceStatistics["High"] = &ImportanceStatistic{TaskMap: map[string]Task{}}
 	sw.ImportanceStatistics["Normal"] = &ImportanceStatistic{TaskMap: map[string]Task{}}
 
@@ -61,21 +60,25 @@ func (sw *SprintWeekly) analyzeImportance() {
 			is.CompletePercent = is.Completed * 100 / is.Total
 		}
 	}
+	return *sw
 }
 
-// Sprints 스프린트 데이터 조회
-func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []string) ([]*SprintWeekly, error) {
-	rootProject := w.ProjectsByLink(sprintRootLink, nil)
+type AllData struct {
+	UserAll       AllUserMap
+	AttachmentAll AllAttachmentMap
+	ProjectAll    AllProjectMap
+}
 
-	// API 호출 제한 때문에 전체를 가져와서 필터링
-	var userAll = w.UserAll()
-	var attachmentAll = w.AttachmentAll()
-	var folderAll = w.FolderAll()
+// Sprint 스프린트 데이터 조회
+func (w *Client) Sprint(date time.Time, rootProjectLink string, outputDomains []string, data AllData) (SprintWeekly, error) {
+	rootProject := w.ProjectsByLink(rootProjectLink, nil)
 
-	monthProject, err := findSprintMonthProject(&folderAll, &rootProject, spMonth)
+	// 해당 월의 각 sprint 회차 폴더를 조회한다 (ex. "2022.11.SP1")
+	sprintProject, err := FindSprintProjects(data.ProjectAll, &rootProject, date.Format("2006.01"))
 	if err != nil {
-		return nil, err
+		return SprintWeekly{}, err
 	}
+	fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", sprintProject.Title)
 
 	// 산출물 도메인 필터
 	m := ahocorasick.NewStringMatcher(outputDomains)
@@ -83,8 +86,8 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		return len(m.Match([]byte(url))) > 0
 	}
 
-	// 작업 조회 및 데이터 가공
-	tasksAllPerParentId, tasksAllPerTaskId := w.TaskAll(monthProject.ID)
+	// 작업 조회 및 데이터 가공을 위한 익명 함수
+	tasksAllPerParentId, tasksAllPerTaskId := w.TaskAll(sprintProject.ID)
 	findTaskByIds := func(parentId string, authorName string) []Task {
 		var taskTemp = tasksAllPerParentId[parentId]
 		// sprint에 폴더 형태로 등록했을 경우, 하위 작업을 조회하여 포함한다
@@ -96,7 +99,7 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		for i, task := range taskTemp {
 			// 본인을 제외한 협업담당자를 설정한다
 			for _, responsibleId := range task.ResponsibleIds {
-				author := userAll.findUser(responsibleId)
+				author := data.UserAll.findUser(responsibleId)
 				if strings.ToLower(authorName) != strings.ToLower(author.FirstName) {
 					taskTemp[i].Coworkers = append(taskTemp[i].Coworkers, author)
 				}
@@ -108,7 +111,7 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 			}
 			// 각 작업의 첨부파일을 조회하여 산출물로 설정한다
 			if task.HasAttachments {
-				attachments := attachmentAll.findByTaskId(task.ID)
+				attachments := data.AttachmentAll.findByTaskId(task.ID)
 				for _, attachment := range attachments {
 					// 도메인 필터
 					if outputFilter(attachment.Url) {
@@ -130,79 +133,32 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		return taskTemp
 	}
 
-	// 해당 월의 각 sprint 회차 폴더를 조회한다 (ex. "2022.11.SP1")
-	projectsD3 := w.ProjectsByIds(monthProject.ChildIds)
-
+	// sprint 데이터를 가공한다
+	// 팀원 별 프로젝트 하위 작업 조회
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
 	done := make(chan struct{})
 
-	var sprintWeeklyList []*SprintWeekly
-	// sprint 데이터를 가공한다
-	for _, folder := range projectsD3.Data {
+	var sprints []Sprint
+	foldersPerMember := data.ProjectAll.FindProjectsByIDs(sprintProject.ChildIds)
+	for _, pMember := range foldersPerMember {
 		wg.Add(1)
-
-		fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", folder.Title)
-		go func(p Project) {
+		go func(pMember Project) {
 			defer wg.Done()
 
-			// 팀원 별 폴더 조회 - 2022.04.SP1.anthony
-			foldersPerMember := folderAll.findFolderByIds(p.ChildIds)
+			sprintTitleSlice := strings.Split(pMember.Title, ".")
+			authorName := sprintTitleSlice[len(sprintTitleSlice)-1]
 
-			doneChild := make(chan struct{})
-			var wgChild sync.WaitGroup
-			var mutexChild sync.Mutex
-
-			// 팀원 별 프로젝트 하위 작업 조회
-			var sprints []Sprint
-			for _, pMember := range foldersPerMember {
-				wgChild.Add(1)
-				go func(pMember Project) {
-					defer wgChild.Done()
-
-					authorName := strings.Split(pMember.Title, ".")[3]
-
-					mutexChild.Lock()
-					sprints = append(sprints, Sprint{
-						AuthorName: authorName,
-						Tasks:      findTaskByIds(pMember.ID, authorName),
-						SprintGoal: pMember.Description,
-					})
-					mutexChild.Unlock()
-
-					doneChild <- struct{}{}
-				}(pMember)
-			}
-
-			go func() {
-				wgChild.Wait()
-				close(doneChild)
-			}()
-
-			for i := 0; i < len(foldersPerMember); i++ {
-				select {
-				case <-doneChild:
-				case <-time.After(10 * time.Second):
-					log.Error().Caller().Msg("[wrike] spring api timeout for 5s")
-				}
-			}
-
-			// 이름 순으로 정렬
-			sort.Slice(sprints, func(i, j int) bool { return sprints[i].AuthorName < sprints[j].AuthorName })
-
-			// 1주치 Sprint 구조체 생성
 			mutex.Lock()
-			defer mutex.Unlock()
+			sprints = append(sprints, Sprint{
+				AuthorName: authorName,
+				Tasks:      findTaskByIds(pMember.ID, authorName),
+				SprintGoal: pMember.Description,
+			})
+			mutex.Unlock()
 
-			sprintWeekly := SprintWeekly{
-				Title:                p.Title,
-				Sprints:              sprints,
-				ImportanceStatistics: map[string]*ImportanceStatistic{},
-			}
-			sprintWeekly.analyzeImportance()
-			sprintWeeklyList = append(sprintWeeklyList, &sprintWeekly)
 			done <- struct{}{}
-		}(folder)
+		}(pMember)
 	}
 
 	go func() {
@@ -210,7 +166,7 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		close(done)
 	}()
 
-	for i := 0; i < len(projectsD3.Data); i++ {
+	for i := 0; i < len(foldersPerMember); i++ {
 		select {
 		case <-done:
 		case <-time.After(10 * time.Second):
@@ -218,23 +174,26 @@ func (w *Client) Sprints(spMonth string, sprintRootLink string, outputDomains []
 		}
 	}
 
-	return sprintWeeklyList, nil
+	// 이름 순으로 정렬
+	sort.Slice(sprints, func(i, j int) bool { return sprints[i].AuthorName < sprints[j].AuthorName })
+
+	sprintWeekly := SprintWeekly{
+		Title:                sprintProject.Title,
+		Sprints:              sprints,
+		ImportanceStatistics: map[string]*ImportanceStatistic{},
+	}
+	return sprintWeekly.analyzeImportance(), nil
 }
 
-// findSprintMonthProject 동기화 할 월별 폴더 조회 (ex. "2022년 10월")
-func findSprintMonthProject(fa *AllFolderMap, rootProject *Projects, spMonth string) (Project, error) {
-	projectsD2 := fa.findFolderByIds(rootProject.Data[0].ChildIds)
-	result := Project{}
-
-	for _, p := range projectsD2 {
-		if p.Title == spMonth {
-			result = p
-			break
+// FindSprintProjects 동기화 할 월별 폴더 조회 (ex. month: "2022.10.SP1")
+// return Project, error (Project의 Title은 2023.04.SP1 형식)
+func FindSprintProjects(fa AllProjectMap, rootProject *Projects, month string) (Project, error) {
+	projects := fa.FindProjectsByIDs(rootProject.Data[0].ChildIds)
+	for _, p := range projects {
+		if strings.HasPrefix(p.Title, month) {
+			return p, nil
 		}
 	}
-	if len(result.Title) == 0 {
-		msg := fmt.Sprintf("wrike에 [%s] sprint 폴더가 존재하지 않아요\n", spMonth)
-		return Project{}, errors.New(msg)
-	}
-	return result, nil
+
+	return Project{}, fmt.Errorf("wrike에 [%s] sprint 폴더가 존재하지 않아요\n", month)
 }

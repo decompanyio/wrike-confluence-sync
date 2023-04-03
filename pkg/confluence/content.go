@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	goconfluence "github.com/virtomize/confluence-go-api"
-	"sync"
 	"time"
 	"wrike-confluence-sync/pkg/wrike"
 )
 
 type SyncConfig struct {
-	SpMonth          string
-	SprintRootLink   string
+	Date             time.Time
 	AncestorId       string
 	OutputDomains    []string
 	ConfluenceDomain string
@@ -31,7 +29,6 @@ func (c *Client) checkContentExist(title string) (bool, *goconfluence.ContentSea
 }
 
 // NewContent 컨플 페이지를 생성한다
-//
 // @param ancestorId 부모 컨플의 ID. 부모 컨플 하위 페이지로 생성
 // @param title 컨플 페이지 제목
 // @param body 컨플 본문
@@ -57,11 +54,13 @@ func (c *Client) NewContent(ancestorId string, title string, body string, conten
 
 	var contentResult *goconfluence.Content
 	var err error
+
+	// 컨플 페이지가 존재하는 경우 업데이트, 없는 경우 생성
 	if contentSearch.Size > 0 {
 		content.ID = contentSearch.Results[0].ID
 		content.Version = &goconfluence.Version{
-			Number:    contentSearch.Results[0].Version.Number + 1,
-			MinorEdit: true, // 관찰자에게 알리지 않음
+			Number:    contentSearch.Results[0].Version.Number + 1, // 버전 증가
+			MinorEdit: true,                                        // 관찰자에게 알리지 않음
 		}
 
 		contentResult, err = c.Client.UpdateContent(content)
@@ -74,10 +73,15 @@ func (c *Client) NewContent(ancestorId string, title string, body string, conten
 }
 
 // SyncContent wrike의 sprint 데이터를 조회하여 컨플 페이지로 등록한다
-func (c *Client) SyncContent(syncConfig SyncConfig, wrikeClient *wrike.Client) error {
-	searchTitle := syncConfig.SpMonth + " Sprint"
+// @param syncConfig 동기화 설정
+// @param wrikeClient wrike 클라이언트
+func (c *Client) SyncContent(sprint wrike.SprintWeekly, syncConfig SyncConfig) error {
+	searchTitle := syncConfig.Date.Format("2006년 1월") + " Sprint"
+
 	var parentId string
 
+	// 부모 컨플 페이지가 존재하는지 확인
+	// 존재하지 않는 경우 생성
 	isExist, parentContent := c.checkContentExist(searchTitle)
 	if isExist {
 		parentId = parentContent.Results[0].ID
@@ -86,59 +90,21 @@ func (c *Client) SyncContent(syncConfig SyncConfig, wrikeClient *wrike.Client) e
 		parentId = parentContentNew.ID
 	}
 
-	sprintWeekly, errWrike := wrikeClient.Sprints(
-		syncConfig.SpMonth,
-		syncConfig.SprintRootLink,
-		syncConfig.OutputDomains)
-
-	if errWrike != nil {
-		return errWrike
+	// 컨플 페이지가 존재하는지 확인
+	contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
+		Title:    sprint.Title,
+		Type:     "page",
+		Expand:   []string{"version"},
+		SpaceKey: c.spaceId,
+	})
+	if err != nil {
+		log.Err(err).Msgf("GetContent : %s", sprint.Title)
+		return err
 	}
 
-	var wg sync.WaitGroup
-	done := make(chan string)
-	errCh := make(chan error)
-
-	for _, weekly := range sprintWeekly {
-		wg.Add(1)
-		go func(weekly *wrike.SprintWeekly) {
-			defer wg.Done()
-
-			title := weekly.Title
-			body := NewTemplate(weekly, syncConfig.ConfluenceDomain)
-
-			// 이미 존재하는 페이지인지 확인
-			contentSearch, err := c.Client.GetContent(goconfluence.ContentQuery{
-				Title:    title,
-				Type:     "page",
-				Expand:   []string{"version"},
-				SpaceKey: c.spaceId,
-			})
-			if err != nil {
-				errCh <- err
-				return
-			}
-
-			// 페이지 생성/수정
-			content := c.NewContent(parentId, title, body, contentSearch)
-			done <- fmt.Sprintf("동기화된 컨플 페이지 링크 ==> %s (%s)", weekly.Title, content.Links.Base+content.Links.TinyUI)
-		}(weekly)
-	}
-
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
-
-	for i := 0; i < len(sprintWeekly); i++ {
-		select {
-		case result := <-done:
-			fmt.Println(result)
-		case e := <-errCh:
-			log.Error().Caller().Err(e).Msg("")
-		case <-time.After(10 * time.Second):
-			log.Error().Caller().Msg("[wrike] confluenceapi timeout for 10s")
-		}
-	}
+	// 컨플 페이지 생성
+	body := NewTemplate(sprint, syncConfig.ConfluenceDomain)
+	content := c.NewContent(parentId, sprint.Title, body, contentSearch)
+	fmt.Printf("동기화된 컨플 페이지 링크 ==> %s (%s)\n", sprint.Title, content.Links.Base+content.Links.TinyUI)
 	return nil
 }

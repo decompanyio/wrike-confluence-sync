@@ -7,7 +7,6 @@ import (
 	goconfluence "github.com/virtomize/confluence-go-api"
 	"os"
 	"testing"
-	"wrike-confluence-sync/pkg/wrike"
 )
 
 var cf *Client
@@ -41,31 +40,7 @@ func TestSpace(t *testing.T) {
 	assert.NotEqual(t, spaces, nil)
 }
 
-// wrike 데이터로 html 동적 생성
 func TestNewTemplate(t *testing.T) {
-	// wrike 데이터 조회
-	wrikeAPI, err := wrike.NewWrikeClient(
-		os.Getenv("WRIKE_BASE_URL"),
-		os.Getenv("WRIKE_TOKEN"),
-		os.Getenv("WRIKE_SPACE_ID"))
-	sprintWeekly, err := wrikeAPI.Sprints("2022년 04월", sprintRootLink, []string{"https://google.com"})
-	assert.NoError(t, err)
 
-	for _, weekly := range sprintWeekly {
-		data := NewTemplate(weekly.Sprints, os.Getenv("DOMAIN"))
-		fmt.Println(data)
-		assert.NotEqual(t, data, nil)
-	}
+	template := NewTemplate()
 }
-
-//func TestCreateContent(t *testing.T) {
-//	syncConfig := SyncConfig{
-//		SpMonth:        "2022년 4월",
-//		SprintRootLink: sprintRootLink,
-//		AncestorId:     os.Getenv("ANCESTORID"),
-//	}
-//
-//	cf.SyncContent(syncConfig)
-//
-//	assert.NotEqual(t, 1, nil)
-//}

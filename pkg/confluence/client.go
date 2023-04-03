@@ -7,11 +7,13 @@ import (
 )
 
 type Client struct {
-	Client  *goconfluence.API
-	spaceId string
+	Client  *goconfluence.API // confluence client
+	spaceId string            // confluence space key
 }
 
+// NewConfluenceClient confluence client 생성
 func NewConfluenceClient(domain string, username string, token string, spaceId string) (*Client, error) {
+	// domain validation
 	domainValid, err := url.ParseRequestURI(domain)
 	if err != nil {
 		return nil, err

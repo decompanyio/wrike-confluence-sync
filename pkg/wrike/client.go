@@ -15,7 +15,7 @@ type Client struct {
 	httpClient *resty.Client
 }
 
-// NewWrikeClient 생성자
+// NewWrikeClient wrike client 생성
 func NewWrikeClient(host string, bearer string, spaceId string) (*Client, error) {
 	hostValid, err := url.ParseRequestURI(host)
 	if err != nil {
@@ -34,14 +34,16 @@ func NewWrikeClient(host string, bearer string, spaceId string) (*Client, error)
 	}, nil
 }
 
-// API 공통 모듈 (internal)
+// newAPI wrike api 호출
 func (w *Client) newAPI(uri string, urlQuery map[string]string, target interface{}) {
+	// request 생성
 	req, err := http.NewRequest("GET", w.host+uri, nil)
 	if err != nil {
-		log.Error().Caller().Err(err).Msg("")
+		log.Err(err).Msg("failed to call wrike api")
 		panic(err)
 	}
 
+	// query string
 	if urlQuery != nil {
 		q := req.URL.Query()
 		for k, v := range urlQuery {
@@ -50,13 +52,18 @@ func (w *Client) newAPI(uri string, urlQuery map[string]string, target interface
 		req.URL.RawQuery = q.Encode()
 	}
 
+	// api 호출
 	resp, err := w.httpClient.R().
 		SetHeader("Authorization", "Bearer "+w.bearer).
 		SetResult(target).
 		Get(req.URL.String())
 
 	if err != nil || resp.StatusCode() != http.StatusOK {
-		log.Error().Caller().Err(err).Msg(string(resp.Body()))
+		log.Err(err).Msg("failed to call wrike api")
+		panic(err)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		log.Error().Caller().Msg(string(resp.Body()))
 		panic(err)
 	}
 }
