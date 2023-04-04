@@ -27,7 +27,7 @@ func main() {
 		os.Getenv("CONFLUENCE_SPACEID"),
 	)
 	if err != nil {
-		log.Err(err).Msg("failed to create confluence client:")
+		log.Err(err).Msg("failed to create confluence client")
 		return
 	}
 

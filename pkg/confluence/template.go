@@ -2,21 +2,14 @@ package confluence
 
 import (
 	"bytes"
+	"html"
 	"html/template"
 	"strings"
 )
 
-// escapeSpecialHTML 특수 문자 변환
-func escapeSpecialHTML(str string) string {
-	str = strings.Replace(str, `&lt;`, `<`, -1)
-	str = strings.Replace(str, `&gt;`, `>`, -1)
-	str = strings.Replace(str, `&amp;`, `&`, -1)
-	return str
-}
-
 // NewTemplate 템플릿 생성
 func NewTemplate(dataParam interface{}, confluenceDomain string) string {
-	html := `<ac:structured-macro ac:name="toc" ac:schema-version="1" data-layout="default"><ac:parameter ac:name="minLevel">1</ac:parameter><ac:parameter ac:name="maxLevel">7</ac:parameter><ac:parameter ac:name="type">flat</ac:parameter></ac:structured-macro>
+	htmlTmpl := `<ac:structured-macro ac:name="toc" ac:schema-version="1" data-layout="default"><ac:parameter ac:name="minLevel">1</ac:parameter><ac:parameter ac:name="maxLevel">7</ac:parameter><ac:parameter ac:name="type">flat</ac:parameter></ac:structured-macro>
 
 <ac:layout>
 	<ac:layout-section ac:type="two_equal" ac:breakout-mode="default">
@@ -104,14 +97,14 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 </table>
 {{- end -}}`
 
-	// html 템플릿 로드
+	// htmlTmpl 템플릿 로드
 	tmpl := template.New("confluence-template")
 	var err error
 
-	tmpl, err = tmpl.Parse(html)
+	tmpl, err = tmpl.Parse(htmlTmpl)
 	errHandler(err)
 
-	// 데이터를 기반으로 html 템플릿 동적 생성
+	// 데이터를 기반으로 htmlTmpl 템플릿 동적 생성
 	var tmplString bytes.Buffer
 	err = tmpl.Execute(&tmplString, dataParam)
 	errHandler(err)
@@ -119,6 +112,5 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	// 태그 사이 공백 제거
 	// 예시: </th>  <th>  ==> </th><th>
 	result := strings.ReplaceAll(tmplString.String(), `/\>\s+\</m`, `><`)
-	result = escapeSpecialHTML(result)
-	return result
+	return html.UnescapeString(result)
 }
