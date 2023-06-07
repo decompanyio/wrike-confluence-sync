@@ -47,10 +47,6 @@ func main() {
 	// 일을 항상 1일로 설정 (8월 31일에 월 +1 하니까 9월이 아니라 10월이 되어버림)
 	now = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 
-	var wg sync.WaitGroup
-	done := make(chan struct{})
-	errCh := make(chan error)
-
 	var spMonths []time.Time
 	spMonths = append(spMonths, now.In(loc).AddDate(0, -1, 0)) // 저번달
 	spMonths = append(spMonths, now.In(loc).AddDate(0, 0, 0))  // 이번달
@@ -61,6 +57,10 @@ func main() {
 		AttachmentAll: wrikeClient.AttachmentAll(),
 		ProjectAll:    wrikeClient.ProjectAll(),
 	}
+
+	var wg sync.WaitGroup
+	done := make(chan struct{})
+	errCh := make(chan error)
 
 	for _, spMonth := range spMonths {
 		wg.Add(1)
