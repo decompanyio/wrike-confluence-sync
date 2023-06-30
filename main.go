@@ -67,22 +67,29 @@ func main() {
 		go func(date time.Time) {
 			defer wg.Done()
 			// 동기화 실행
-			sprint, errChild := wrikeClient.Sprint(date, os.Getenv("WRIKE_SPRINT_ROOT_URL"), outputDomains, data)
-			if errChild != nil {
-				errCh <- errChild
+			sprintProjects, err := wrikeClient.FindSprintProjects(data.ProjectAll, os.Getenv("WRIKE_SPRINT_ROOT_URL"), date.Format("2006.01"))
+			if err != nil {
+				errCh <- err
 				return
 			}
 
-			syncConfig := confluence.SyncConfig{
-				Date:             date,
-				AncestorId:       os.Getenv("CONFLUENCE_ANCESTOR_ID"),
-				OutputDomains:    outputDomains,
-				ConfluenceDomain: os.Getenv("CONFLUENCE_DOMAIN"),
-			}
-			errSync := cfClient.SyncContent(sprint, syncConfig)
-			if errSync != nil {
-				errCh <- errSync
-				return
+			for _, sprintProject := range sprintProjects {
+				sprint, errChild := wrikeClient.Sprint(sprintProject, outputDomains, data)
+				if errChild != nil {
+					return
+				}
+
+				syncConfig := confluence.SyncConfig{
+					Date:             date,
+					AncestorId:       os.Getenv("CONFLUENCE_ANCESTOR_ID"),
+					OutputDomains:    outputDomains,
+					ConfluenceDomain: os.Getenv("CONFLUENCE_DOMAIN"),
+				}
+				errSync := cfClient.SyncContent(sprint, syncConfig)
+				if errSync != nil {
+					errCh <- errSync
+					return
+				}
 			}
 			done <- struct{}{}
 		}(spMonth)

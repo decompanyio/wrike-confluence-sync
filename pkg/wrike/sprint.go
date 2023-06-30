@@ -70,14 +70,7 @@ type AllData struct {
 }
 
 // Sprint 스프린트 데이터 조회
-func (w *Client) Sprint(date time.Time, rootProjectLink string, outputDomains []string, data AllData) (SprintWeekly, error) {
-	rootProject := w.ProjectsByLink(rootProjectLink, nil)
-
-	// 해당 월의 각 sprint 회차 폴더를 조회한다 (ex. "2022.11.SP1")
-	sprintProject, err := FindSprintProjects(data.ProjectAll, &rootProject, date.Format("2006.01"))
-	if err != nil {
-		return SprintWeekly{}, err
-	}
+func (w *Client) Sprint(sprintProject Project, outputDomains []string, data AllData) (SprintWeekly, error) {
 	fmt.Printf("동기화할 Wrike의 Sprint ==> %s\n", sprintProject.Title)
 
 	// 산출물 도메인 필터
@@ -186,14 +179,21 @@ func (w *Client) Sprint(date time.Time, rootProjectLink string, outputDomains []
 }
 
 // FindSprintProjects 동기화 할 월별 폴더 조회 (ex. month: "2022.10.SP1")
-// return Project, error (Project의 Title은 2023.04.SP1 형식)
-func FindSprintProjects(fa AllProjectMap, rootProject *Projects, month string) (Project, error) {
+// return []Project, error (Project의 Title은 2023.04.SP1 형식)
+func (w *Client) FindSprintProjects(fa AllProjectMap, rootProjectLink string, month string) ([]Project, error) {
+	var result []Project
+
+	rootProject := w.ProjectsByLink(rootProjectLink, nil)
 	projects := fa.FindProjectsByIDs(rootProject.Data[0].ChildIds)
+
 	for _, p := range projects {
 		if strings.HasPrefix(p.Title, month) {
-			return p, nil
+			result = append(result, p)
 		}
 	}
 
-	return Project{}, fmt.Errorf("wrike에 [%s] sprint 폴더가 존재하지 않아요\n", month)
+	if len(result) == 0 {
+		return nil, fmt.Errorf("wrike에 [%s] sprint 폴더가 존재하지 않아요\n", month)
+	}
+	return result, nil
 }
