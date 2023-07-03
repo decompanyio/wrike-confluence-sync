@@ -17,7 +17,7 @@ func init() {
 	godotenv.Load()
 
 	var err error
-	cf, err = NewConfluenceClient(
+	cf, err = NewClient(
 		os.Getenv("CONFLUENCE_DOMAIN"),
 		os.Getenv("CONFLUENCE_USER"),
 		os.Getenv("CONFLUENCE_TOKEN"),
@@ -38,9 +38,4 @@ func TestSpace(t *testing.T) {
 	}
 
 	assert.NotEqual(t, spaces, nil)
-}
-
-func TestNewTemplate(t *testing.T) {
-
-	template := NewTemplate()
 }

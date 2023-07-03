@@ -68,7 +68,7 @@ func (w *Client) TaskAll(rootFolderId string) (TaskMapByParentIdAll, TaskMapByTa
 		"subTasks":    "true",
 		"sortField":   `DueDate`,
 	}
-	w.newAPI("/folders/"+rootFolderId+"/tasks", urlQuery, &tasks)
+	w.callAPI("/folders/"+rootFolderId+"/tasks", urlQuery, &tasks)
 
 	// map key: 작업의 부모 ID
 	taskMapByParentIdAll := TaskMapByParentIdAll{}

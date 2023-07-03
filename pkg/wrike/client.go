@@ -1,69 +1,50 @@
 package wrike
 
 import (
-	"errors"
+	"fmt"
 	"github.com/go-resty/resty/v2"
-	"github.com/rs/zerolog/log"
-	"net/http"
 	"net/url"
 )
 
 type Client struct {
-	host       string
+	host       *url.URL
 	bearer     string
 	spaceId    string
 	httpClient *resty.Client
 }
 
-// NewWrikeClient wrike client 생성
-func NewWrikeClient(host string, bearer string, spaceId string) (*Client, error) {
-	hostValid, err := url.ParseRequestURI(host)
-	if err != nil {
-		return nil, errors.New("failed to create wrike client")
+func NewClient(host, bearer, spaceId string) (*Client, error) {
+	if host == "" || bearer == "" {
+		return nil, fmt.Errorf("both host and bearer are required to create a Wrike client")
 	}
 
-	if len(bearer) == 0 {
-		return nil, errors.New("failed to create wrike client")
+	parsedHost, err := url.Parse(host)
+	if err != nil {
+		return nil, fmt.Errorf("invalid host: %v", err)
 	}
 
 	return &Client{
-		host:       hostValid.String(),
+		host:       parsedHost,
 		bearer:     bearer,
 		spaceId:    spaceId,
 		httpClient: resty.New(),
 	}, nil
 }
 
-// newAPI wrike api 호출
-func (w *Client) newAPI(uri string, urlQuery map[string]string, target interface{}) {
-	// request 생성
-	req, err := http.NewRequest("GET", w.host+uri, nil)
+func (c *Client) callAPI(endpoint string, queryParams map[string]string, result interface{}) error {
+	resp, err := c.httpClient.R().
+		SetHeader("Authorization", "Bearer "+c.bearer).
+		SetQueryParams(queryParams).
+		SetResult(result).
+		Get(c.host.String() + endpoint)
+
 	if err != nil {
-		log.Err(err).Msg("failed to call wrike api")
-		panic(err)
+		return fmt.Errorf("failed to call Wrike API: %v", err)
 	}
 
-	// query string
-	if urlQuery != nil {
-		q := req.URL.Query()
-		for k, v := range urlQuery {
-			q.Add(k, v)
-		}
-		req.URL.RawQuery = q.Encode()
+	if resp.StatusCode() != 200 {
+		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode(), resp.String())
 	}
 
-	// api 호출
-	resp, err := w.httpClient.R().
-		SetHeader("Authorization", "Bearer "+w.bearer).
-		SetResult(target).
-		Get(req.URL.String())
-
-	if err != nil || resp.StatusCode() != http.StatusOK {
-		log.Err(err).Msg("failed to call wrike api")
-		panic(err)
-	}
-	if resp.StatusCode() != http.StatusOK {
-		log.Error().Caller().Msg(string(resp.Body()))
-		panic(err)
-	}
+	return nil
 }

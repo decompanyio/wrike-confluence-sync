@@ -22,28 +22,28 @@ type Attachment struct {
 	TaskID      string    `json:"taskId"`
 	Url         string    `json:"url,omitempty"`
 }
+type AllAttachmentMap map[string][]Attachment
 
-// AttachmentAll 모든 첨부파일 조회 후 parentId가 키인 map 반환
-func (w *Client) AttachmentAll() AllAttachmentMap {
+// GetAllAttachments 모든 첨부파일 조회 후 parentId가 키인 map 반환
+func (w *Client) GetAllAttachments() AllAttachmentMap {
 	urlQuery := map[string]string{
-		"withUrls": `true`,
+		"withUrls": "true",
 	}
-	attachments := Attachments{}
-	w.newAPI("/attachments", urlQuery, &attachments)
 
-	attachmentAll := AllAttachmentMap{}
+	var attachments Attachments
+	w.callAPI("/attachments", urlQuery, &attachments)
+
+	attachmentMap := make(AllAttachmentMap)
 	for _, attachment := range attachments.Data {
-		attachmentAll[attachment.TaskID] = append(attachmentAll[attachment.TaskID], attachment)
+		attachmentMap[attachment.TaskID] = append(attachmentMap[attachment.TaskID], attachment)
 	}
 
-	return attachmentAll
+	return attachmentMap
 }
 
 func (a *Attachment) IsDomain(domain string) bool {
-	return strings.Index(a.Url, domain) > -1
+	return strings.Contains(a.Url, domain)
 }
-
-type AllAttachmentMap map[string][]Attachment
 
 func (aam *AllAttachmentMap) findByTaskId(taskId string) []Attachment {
 	return (*aam)[taskId]

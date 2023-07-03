@@ -133,7 +133,7 @@ func (w *Client) Sprint(sprintProject Project, outputDomains []string, data AllD
 	done := make(chan struct{})
 
 	var sprints []Sprint
-	foldersPerMember := data.ProjectAll.FindProjectsByIDs(sprintProject.ChildIds)
+	foldersPerMember := data.ProjectAll.GetProjectsByIds(sprintProject.ChildIds)
 	for _, pMember := range foldersPerMember {
 		wg.Add(1)
 		go func(pMember Project) {
@@ -183,8 +183,8 @@ func (w *Client) Sprint(sprintProject Project, outputDomains []string, data AllD
 func (w *Client) FindSprintProjects(fa AllProjectMap, rootProjectLink string, month string) ([]Project, error) {
 	var result []Project
 
-	rootProject := w.ProjectsByLink(rootProjectLink, nil)
-	projects := fa.FindProjectsByIDs(rootProject.Data[0].ChildIds)
+	rootProject := w.GetProjectsByLink(rootProjectLink, nil)
+	projects := fa.GetProjectsByIds(rootProject.Data[0].ChildIds)
 
 	for _, p := range projects {
 		if strings.HasPrefix(p.Title, month) {

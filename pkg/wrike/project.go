@@ -5,11 +5,13 @@ import (
 	"time"
 )
 
+// Projects contains the kind of the project and the data related to it.
 type Projects struct {
 	Kind string    `json:"kind"`
 	Data []Project `json:"data"`
 }
 
+// Project holds the details about a single project.
 type Project struct {
 	ID          string   `json:"id"`
 	Title       string   `json:"title"`
@@ -27,38 +29,39 @@ type Project struct {
 	} `json:"project,omitempty"`
 }
 
+// AllProjectMap is a map with project id as key and Project struct as value
 type AllProjectMap map[string]Project
 
-// FindProjectsByIDs projectIDs 해당하는 프로젝트 반환
-func (afm *AllProjectMap) FindProjectsByIDs(projectIDs []string) []Project {
-	var projectTemp []Project
+// GetProjectsByIds gets projects for given project IDs
+func (pm *AllProjectMap) GetProjectsByIds(projectIDs []string) []Project {
+	var projects []Project
 	for _, id := range projectIDs {
-		projectTemp = append(projectTemp, (*afm)[id])
+		projects = append(projects, (*pm)[id])
 	}
-	return projectTemp
+	return projects
 }
 
-// ProjectAll 모든 폴더 조회(프로젝트 제외) 후 folderId가 키인 map 반환
-func (w *Client) ProjectAll() AllProjectMap {
+// GetAllProjects fetches all projects and returns them as a map where projectId is the key
+func (w *Client) GetAllProjects() AllProjectMap {
 	urlQuery := map[string]string{
 		"deleted": "false",
 		"project": "true",
 		"fields":  `["description"]`,
 	}
 
-	var folders Projects
-	w.newAPI("/spaces/"+w.spaceId+"/folders", urlQuery, &folders)
+	var projects Projects
+	w.callAPI("/spaces/"+w.spaceId+"/folders", urlQuery, &projects)
 
-	allFolderMap := AllProjectMap{}
-	for _, folder := range folders.Data {
-		allFolderMap[folder.ID] = folder
+	projectMap := AllProjectMap{}
+	for _, project := range projects.Data {
+		projectMap[project.ID] = project
 	}
 
-	return allFolderMap
+	return projectMap
 }
 
-// ProjectsByLink 프로젝트 & 폴더 - 고정 링크로 필터
-func (w *Client) ProjectsByLink(link string, urlQuery map[string]string) Projects {
+// GetProjectsByLink fetches projects & folders filtered by link
+func (w *Client) GetProjectsByLink(link string, urlQuery map[string]string) Projects {
 	if urlQuery == nil {
 		urlQuery = map[string]string{
 			"deleted": "false",
@@ -68,17 +71,17 @@ func (w *Client) ProjectsByLink(link string, urlQuery map[string]string) Project
 		urlQuery["permalink"] = link
 	}
 
-	projects := Projects{}
-	w.newAPI("/folders", urlQuery, &projects)
+	var projects Projects
+	w.callAPI("/folders", urlQuery, &projects)
 
 	return projects
 }
 
-// ProjectsByIds 프로젝트 & 폴더 - ID로 필터
-func (w *Client) ProjectsByIds(ids []string) Projects {
-	projects := Projects{}
+// GetProjectsByIds fetches projects & folders filtered by Ids
+func (w *Client) GetProjectsByIds(ids []string) Projects {
+	var projects Projects
 	if len(ids) > 0 {
-		w.newAPI("/folders/"+strings.Join(ids, ","), nil, &projects)
+		w.callAPI("/folders/"+strings.Join(ids, ","), nil, &projects)
 	}
 
 	return projects

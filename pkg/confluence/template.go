@@ -102,12 +102,16 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
 	var err error
 
 	tmpl, err = tmpl.Parse(htmlTmpl)
-	errHandler(err)
+	if err != nil {
+		panic(err)
+	}
 
 	// 데이터를 기반으로 htmlTmpl 템플릿 동적 생성
 	var tmplString bytes.Buffer
 	err = tmpl.Execute(&tmplString, dataParam)
-	errHandler(err)
+	if err != nil {
+		panic(err)
+	}
 
 	// 태그 사이 공백 제거
 	// 예시: </th>  <th>  ==> </th><th>

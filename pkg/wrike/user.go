@@ -37,12 +37,12 @@ func (aum *AllUserMap) findUser(userId string) User {
 	return (*aum)[userId]
 }
 
-func (w *Client) UserAll() AllUserMap {
+func (w *Client) GetAllUsers() AllUserMap {
 	users := Users{}
 	urlQuery := map[string]string{
 		"deleted": `false`,
 	}
-	w.newAPI("/contacts", urlQuery, &users)
+	w.callAPI("/contacts", urlQuery, &users)
 
 	userAll := AllUserMap{}
 	for _, user := range users.Data {
