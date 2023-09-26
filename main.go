@@ -11,6 +11,7 @@ import (
 
 func main() {
 	outputDomains := []string{
+		os.Getenv("CONFLUENCE_DOMAIN"),
 		"https://www.polarissharetech.net",
 		"https://www.figma.com",
 		"https://www.polarisoffice.com",
