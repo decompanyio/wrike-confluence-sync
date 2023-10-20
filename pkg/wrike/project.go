@@ -1,7 +1,7 @@
 package wrike
 
 import (
-	"strings"
+	"fmt"
 	"time"
 )
 
@@ -42,7 +42,7 @@ func (pm *AllProjectMap) GetProjectsByIds(projectIDs []string) []Project {
 }
 
 // GetAllProjects fetches all projects and returns them as a map where projectId is the key
-func (w *Client) GetAllProjects() AllProjectMap {
+func (w *Client) GetAllProjects() (AllProjectMap, error) {
 	urlQuery := map[string]string{
 		"deleted": "false",
 		"project": "true",
@@ -50,18 +50,25 @@ func (w *Client) GetAllProjects() AllProjectMap {
 	}
 
 	var projects Projects
-	w.callAPI("/spaces/"+w.spaceId+"/folders", urlQuery, &projects)
+
+	resp, err := w.httpClient.R().SetQueryParams(urlQuery).
+		SetResult(&projects).
+		Get("/spaces/" + w.spaceId + "/folders")
+
+	if err != nil {
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode(), resp.String())
+	}
 
 	projectMap := AllProjectMap{}
 	for _, project := range projects.Data {
 		projectMap[project.ID] = project
 	}
 
-	return projectMap
+	return projectMap, nil
 }
 
 // GetProjectsByLink fetches projects & folders filtered by link
-func (w *Client) GetProjectsByLink(link string, urlQuery map[string]string) Projects {
+func (w *Client) GetProjectsByLink(link string, urlQuery map[string]string) (Projects, error) {
 	if urlQuery == nil {
 		urlQuery = map[string]string{
 			"deleted": "false",
@@ -72,17 +79,13 @@ func (w *Client) GetProjectsByLink(link string, urlQuery map[string]string) Proj
 	}
 
 	var projects Projects
-	w.callAPI("/folders", urlQuery, &projects)
+	resp, err := w.httpClient.R().SetQueryParams(urlQuery).
+		SetResult(&projects).
+		Get("/folders")
 
-	return projects
-}
-
-// GetProjectsByIds fetches projects & folders filtered by Ids
-func (w *Client) GetProjectsByIds(ids []string) Projects {
-	var projects Projects
-	if len(ids) > 0 {
-		w.callAPI("/folders/"+strings.Join(ids, ","), nil, &projects)
+	if err != nil {
+		return projects, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode(), resp.String())
 	}
 
-	return projects
+	return projects, nil
 }

@@ -1,5 +1,7 @@
 package wrike
 
+import "fmt"
+
 type Users struct {
 	Kind string `json:"kind"`
 	Data []User `json:"data"`
@@ -37,17 +39,31 @@ func (aum *AllUserMap) findUser(userId string) User {
 	return (*aum)[userId]
 }
 
-func (w *Client) GetAllUsers() AllUserMap {
+func (w *Client) GetAllUsers() (AllUserMap, error) {
 	users := Users{}
+
+	// Fetch data from Wrike
 	urlQuery := map[string]string{
 		"deleted": `false`,
 	}
-	w.callAPI("/contacts", urlQuery, &users)
 
+	resp, err := w.httpClient.R().SetQueryParams(urlQuery).
+		SetResult(&users).
+		Get("/contacts")
+
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode(), resp.String())
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	// userID를 키로 하는 map 생성
 	userAll := AllUserMap{}
 	for _, user := range users.Data {
 		userAll[user.ID] = user
 	}
 
-	return userAll
+	return userAll, err
 }

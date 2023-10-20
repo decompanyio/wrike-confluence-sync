@@ -1,6 +1,7 @@
 package wrike
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -59,7 +60,7 @@ type TaskMapByParentIdAll map[string][]Task
 type TaskMapByTaskIdAll map[string]Task
 
 // TaskAll 모든 작업 조회 후 parentId를 키로 하는 map과 taskId를 키로 하는 map 2개를 반환
-func (w *Client) TaskAll(rootFolderId string) (TaskMapByParentIdAll, TaskMapByTaskIdAll) {
+func (w *Client) TaskAll(rootFolderId string) (TaskMapByParentIdAll, TaskMapByTaskIdAll, error) {
 	tasks := Tasks{}
 	urlQuery := map[string]string{
 		"status":      `["Active","Completed"]`,
@@ -68,7 +69,18 @@ func (w *Client) TaskAll(rootFolderId string) (TaskMapByParentIdAll, TaskMapByTa
 		"subTasks":    "true",
 		"sortField":   `DueDate`,
 	}
-	w.callAPI("/folders/"+rootFolderId+"/tasks", urlQuery, &tasks)
+
+	resp, err := w.httpClient.R().SetQueryParams(urlQuery).
+		SetResult(&tasks).
+		Get("/folders/" + rootFolderId + "/tasks")
+
+	if resp.StatusCode() != 200 {
+		return nil, nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode(), resp.String())
+	}
+
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// map key: 작업의 부모 ID
 	taskMapByParentIdAll := TaskMapByParentIdAll{}
@@ -84,5 +96,5 @@ func (w *Client) TaskAll(rootFolderId string) (TaskMapByParentIdAll, TaskMapByTa
 		taskMapByTaskIdAll[task.ID] = task
 	}
 
-	return taskMapByParentIdAll, taskMapByTaskIdAll
+	return taskMapByParentIdAll, taskMapByTaskIdAll, nil
 }

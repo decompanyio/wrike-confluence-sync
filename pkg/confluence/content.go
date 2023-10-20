@@ -2,8 +2,8 @@ package confluence
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	goconfluence "github.com/virtomize/confluence-go-api"
+	"log/slog"
 	"time"
 	"wrike-confluence-sync/pkg/wrike"
 )
@@ -24,7 +24,7 @@ func (c *Client) getPageContent(title string) (*goconfluence.ContentSearch, erro
 		SpaceKey: c.spaceId,
 	})
 	if err != nil {
-		log.Err(err).Msgf("GetContent failed : %s", title)
+		slog.Error("GetContent failed", slog.String("error", err.Error()))
 		return nil, err
 	}
 	return contentSearch, nil

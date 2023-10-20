@@ -68,9 +68,9 @@ func NewTemplate(dataParam interface{}, confluenceDomain string) string {
             <td>
                 <p><a href="{{ .Permalink }}">
                     {{- if eq .Status "Completed" -}}
-                    	<del>{{ .Title }}</del>
+                    	✅ <del>{{ .Title }}</del> 
                     {{- else -}}
-						{{ .Title }}
+						⏳ {{ .Title }} 
                     {{- end -}}
                 </a></p>
             </td>

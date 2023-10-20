@@ -3,11 +3,18 @@ package wrike
 import (
 	"fmt"
 	"github.com/cloudflare/ahocorasick"
-	"github.com/rs/zerolog/log"
+	"log/slog"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+)
+
+const (
+	ImportanceHigh   = "High"
+	ImportanceNormal = "Normal"
+	StatusActive     = "Active"
+	StatusCompleted  = "Completed"
 )
 
 type Sprint struct {
@@ -16,12 +23,14 @@ type Sprint struct {
 	SprintGoal string `json:"sprintGoal"`
 }
 
+// SprintWeekly 스프린트 회차 단위 데이터
 type SprintWeekly struct {
 	Title                string `json:"title"`
 	Sprints              []Sprint
 	ImportanceStatistics map[string]*ImportanceStatistic
 }
 
+// ImportanceStatistic 중요도 별 진행률 통계
 type ImportanceStatistic struct {
 	Active          int
 	Completed       int
@@ -32,26 +41,28 @@ type ImportanceStatistic struct {
 
 // analyzeImportance 스프린트 데이터의 중요도 별 진행률 분석
 func (sw *SprintWeekly) analyzeImportance() SprintWeekly {
-	sw.ImportanceStatistics["High"] = &ImportanceStatistic{TaskMap: map[string]Task{}}
-	sw.ImportanceStatistics["Normal"] = &ImportanceStatistic{TaskMap: map[string]Task{}}
+	sw.ImportanceStatistics[ImportanceHigh] = &ImportanceStatistic{TaskMap: map[string]Task{}}
+	sw.ImportanceStatistics[ImportanceNormal] = &ImportanceStatistic{TaskMap: map[string]Task{}}
 
+	// 중요도 별 작업 분류
 	for _, sprint := range sw.Sprints {
 		for _, task := range sprint.Tasks {
 			switch task.Importance {
-			case "High":
-				sw.ImportanceStatistics["High"].TaskMap[task.ID] = task
-			case "Normal":
-				sw.ImportanceStatistics["Normal"].TaskMap[task.ID] = task
+			case ImportanceHigh:
+				sw.ImportanceStatistics[ImportanceHigh].TaskMap[task.ID] = task
+			case ImportanceNormal:
+				sw.ImportanceStatistics[ImportanceNormal].TaskMap[task.ID] = task
 			}
 		}
 	}
 
+	// 중요도 별 진행률 계산
 	for _, is := range sw.ImportanceStatistics {
 		for _, task := range is.TaskMap {
 			switch task.Status {
-			case "Active":
+			case StatusActive:
 				is.Active++
-			case "Completed":
+			case StatusCompleted:
 				is.Completed++
 			}
 		}
@@ -61,12 +72,6 @@ func (sw *SprintWeekly) analyzeImportance() SprintWeekly {
 		}
 	}
 	return *sw
-}
-
-type AllData struct {
-	UserAll       AllUserMap
-	AttachmentAll AllAttachmentMap
-	ProjectAll    AllProjectMap
 }
 
 // Sprint 스프린트 데이터 조회
@@ -80,7 +85,11 @@ func (w *Client) Sprint(sprintProject Project, outputDomains []string, data AllD
 	}
 
 	// 작업 조회 및 데이터 가공을 위한 익명 함수
-	tasksAllPerParentId, tasksAllPerTaskId := w.TaskAll(sprintProject.ID)
+	tasksAllPerParentId, tasksAllPerTaskId, err := w.TaskAll(sprintProject.ID)
+	if err != nil {
+		return SprintWeekly{}, err
+	}
+
 	findTaskByIds := func(parentId string, authorName string) []Task {
 		var taskTemp = tasksAllPerParentId[parentId]
 		// sprint에 폴더 형태로 등록했을 경우, 하위 작업을 조회하여 포함한다
@@ -163,7 +172,7 @@ func (w *Client) Sprint(sprintProject Project, outputDomains []string, data AllD
 		select {
 		case <-done:
 		case <-time.After(10 * time.Second):
-			log.Error().Caller().Msg("[wrike] spring api timeout for 5s")
+			slog.Error("[wrike] spring api timeout for 5s")
 		}
 	}
 
@@ -183,7 +192,11 @@ func (w *Client) Sprint(sprintProject Project, outputDomains []string, data AllD
 func (w *Client) FindSprintProjects(fa AllProjectMap, rootProjectLink string, month string) ([]Project, error) {
 	var result []Project
 
-	rootProject := w.GetProjectsByLink(rootProjectLink, nil)
+	rootProject, err := w.GetProjectsByLink(rootProjectLink, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	projects := fa.GetProjectsByIds(rootProject.Data[0].ChildIds)
 
 	for _, p := range projects {

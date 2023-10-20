@@ -1,6 +1,7 @@
 package wrike
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -22,23 +23,38 @@ type Attachment struct {
 	TaskID      string    `json:"taskId"`
 	Url         string    `json:"url,omitempty"`
 }
+
 type AllAttachmentMap map[string][]Attachment
 
-// GetAllAttachments 모든 첨부파일 조회 후 parentId가 키인 map 반환
-func (w *Client) GetAllAttachments() AllAttachmentMap {
+// GetAllAttachments 모든 첨부파일 조회 후 해당 첨부파일의 TaskID가 키인 map 반환
+func (w *Client) GetAllAttachments() (AllAttachmentMap, error) {
+
+	// Fetch data from Wrike
+	var attachments Attachments
+
 	urlQuery := map[string]string{
 		"withUrls": "true",
 	}
 
-	var attachments Attachments
-	w.callAPI("/attachments", urlQuery, &attachments)
+	resp, err := w.httpClient.R().SetQueryParams(urlQuery).
+		SetResult(&attachments).
+		Get("/attachments")
 
+	if resp.StatusCode() != 200 {
+		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode(), resp.String())
+	}
+	if err != nil {
+		panic(err)
+
+	}
+
+	// TaskID를 키로 하는 map 생성
 	attachmentMap := make(AllAttachmentMap)
 	for _, attachment := range attachments.Data {
 		attachmentMap[attachment.TaskID] = append(attachmentMap[attachment.TaskID], attachment)
 	}
 
-	return attachmentMap
+	return attachmentMap, nil
 }
 
 func (a *Attachment) IsDomain(domain string) bool {
