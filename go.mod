@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/cloudflare/ahocorasick v0.0.0-20210425175752-730270c3e184
-	github.com/go-resty/resty/v2 v2.10.0
+	github.com/go-resty/resty/v2 v2.11.0
 	github.com/joho/godotenv v1.5.1
 	github.com/k0kubun/pp/v3 v3.2.0
 	github.com/stretchr/testify v1.8.4
